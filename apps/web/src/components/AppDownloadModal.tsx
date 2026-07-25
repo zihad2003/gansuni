@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, type ReactNode } from 'react'
-import { Download, Smartphone, CheckCircle2, X, Sparkles, ShieldCheck } from 'lucide-react'
+import { Download, Smartphone, CheckCircle2, X, Sparkles, ShieldCheck, ExternalLink } from 'lucide-react'
 
 interface AppDownloadModalProps {
   isOpen: boolean
@@ -60,10 +60,10 @@ export function AppDownloadModal({ isOpen, onClose }: AppDownloadModalProps): Re
           </div>
           <div>
             <h2 className="text-xl font-bold text-white flex items-center gap-1.5">
-              Gaansuni App
+              Gaansuni Mobile App
               <Sparkles size={16} className="text-amber-500" />
             </h2>
-            <p className="text-xs text-white/60">Offline Music Streaming • High Quality 320kbps</p>
+            <p className="text-xs text-white/60">Android APK & PWA • High Fidelity 320kbps</p>
           </div>
         </div>
 
@@ -72,50 +72,62 @@ export function AppDownloadModal({ isOpen, onClose }: AppDownloadModalProps): Re
             <CheckCircle2 size={18} className="text-amber-500 mt-0.5 shrink-0" />
             <div className="text-xs">
               <span className="font-bold text-white block">Offline Music Downloads</span>
-              <span className="text-white/70">Listen to all your favorite tracks without internet.</span>
+              <span className="text-white/70">Download and listen to your favorite songs anywhere.</span>
             </div>
           </div>
 
           <div className="flex items-start gap-3 p-3 rounded-2xl bg-white/5 border border-white/10">
             <CheckCircle2 size={18} className="text-amber-500 mt-0.5 shrink-0" />
             <div className="text-xs">
-              <span className="font-bold text-white block">Superfast Playback & Zero Buffering</span>
-              <span className="text-white/70">Mobile-optimized interface and instant streaming.</span>
+              <span className="font-bold text-white block">Fast & Smooth Performance</span>
+              <span className="text-white/70">Butter-smooth volume animations and zero-latency seeking.</span>
             </div>
           </div>
 
           <div className="flex items-start gap-3 p-3 rounded-2xl bg-white/5 border border-white/10">
             <ShieldCheck size={18} className="text-amber-500 mt-0.5 shrink-0" />
             <div className="text-xs">
-              <span className="font-bold text-white block">100% Free & Open Source</span>
-              <span className="text-white/70">Installable on Desktop and Mobile devices.</span>
+              <span className="font-bold text-white block">100% Secure & Free</span>
+              <span className="text-white/70">Official Android APK file for phone installation.</span>
             </div>
           </div>
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-2.5">
+          {/* DIRECT APK DOWNLOAD BUTTON */}
+          <a
+            href="/downloads/gaansuni.apk"
+            download="gaansuni.apk"
+            className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 text-black font-extrabold text-sm flex items-center justify-center gap-2 hover:opacity-95 active:scale-98 transition-all shadow-xl"
+          >
+            <Smartphone size={20} />
+            <span>Download Android APK File (.apk)</span>
+          </a>
+
+          {/* INSTALL PWA BUTTON */}
           {isInstalled ? (
-            <div className="w-full py-3 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 font-bold text-center text-sm">
+            <div className="w-full py-2.5 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 font-bold text-center text-xs">
               ✓ App Already Installed
             </div>
           ) : (
             <button
               onClick={handleInstallPWA}
-              className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 text-black font-extrabold text-sm flex items-center justify-center gap-2 hover:opacity-95 active:scale-98 transition-all shadow-xl"
+              className="w-full py-3 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-semibold text-xs flex items-center justify-center gap-2 transition-all border border-white/10"
             >
-              <Download size={18} />
-              <span>Install Mobile App / PWA</span>
+              <Download size={16} className="text-amber-400" />
+              <span>Install Web App (PWA)</span>
             </button>
           )}
 
+          {/* GITHUB RELEASES FALLBACK */}
           <a
             href="https://github.com/zihad2003/gansuni/releases"
             target="_blank"
             rel="noopener noreferrer"
-            className="w-full py-3 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-semibold text-xs flex items-center justify-center gap-2 transition-all border border-white/10"
+            className="w-full py-2 text-center text-[11px] text-white/50 hover:text-amber-400 flex items-center justify-center gap-1 transition-colors"
           >
-            <Smartphone size={16} className="text-amber-500" />
-            <span>Direct Android APK Download</span>
+            <span>View GitHub Releases & Release Notes</span>
+            <ExternalLink size={12} />
           </a>
         </div>
       </div>
