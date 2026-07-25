@@ -214,7 +214,7 @@ export function MiniPlayer(): ReactNode {
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 100, opacity: 0 }}
             transition={{ type: 'spring', stiffness: 260, damping: 28 }}
-            className="fixed bottom-0 inset-x-0 z-40 px-3 pb-3 sm:px-6 sm:pb-6"
+            className="fixed bottom-[56px] lg:bottom-0 inset-x-0 z-40 px-2 pb-2 sm:px-6 sm:pb-6"
           >
             {/* QUEUE PANEL */}
             <AnimatePresence>

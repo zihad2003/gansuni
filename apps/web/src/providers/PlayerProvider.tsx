@@ -6,6 +6,8 @@ import { useTheme } from '@/providers/ThemeProvider'
 import { AmbientBackground } from '@/components/AmbientBackground'
 import { MiniPlayer } from '@/components/player/MiniPlayer'
 
+import { MobileBottomNav } from '@/components/MobileBottomNav'
+
 interface PlayerProviderProps {
   children: ReactNode
 }
@@ -123,8 +125,9 @@ export function PlayerProvider({ children }: PlayerProviderProps): ReactNode {
     <>
       <AmbientBackground />
       <div className="flex flex-col min-h-screen">
-        <main className="flex-1 pb-40">{children}</main>
+        <main className="flex-1 pb-40 sm:pb-32">{children}</main>
         <MiniPlayer />
+        <MobileBottomNav />
       </div>
     </>
   )
