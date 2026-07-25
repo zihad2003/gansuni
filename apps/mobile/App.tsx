@@ -7,7 +7,7 @@ import { ThemeProvider } from '@/providers/ThemeProvider'
 import { PlayerProvider } from '@/providers/PlayerProvider'
 
 export default function App() {
-  const ctx = require.context('./app')
+  const ctx = (require as any).context('./app')
 
   return (
     <GestureHandlerRootView style={styles.container}>

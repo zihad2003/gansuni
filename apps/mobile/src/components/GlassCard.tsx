@@ -4,6 +4,7 @@ import {
   View,
   type ViewProps,
   type ViewStyle,
+  type StyleProp,
   Platform,
 } from 'react-native'
 import { BlurView } from 'expo-blur'
@@ -15,7 +16,7 @@ interface GlassCardProps extends ViewProps {
   variant?: GlassVariant
   intensity?: number
   children?: ReactNode
-  style?: ViewStyle
+  style?: StyleProp<ViewStyle>
   tint?: 'light' | 'dark' | 'default'
 }
 

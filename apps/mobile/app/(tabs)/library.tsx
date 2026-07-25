@@ -53,7 +53,7 @@ export default function LibraryScreen() {
   return (
     <SafeAreaView style={styles.screen} edges={['top']}>
       <View style={styles.header}>
-        <View className="flex-row items-center justify-between">
+        <View style={styles.topRow}>
           <View style={styles.titleRow}>
             <Library size={24} color="#F59E0B" />
             <Text style={[styles.title, { color: themeColors.textPrimary }]}>
@@ -199,7 +199,7 @@ export default function LibraryScreen() {
           <View style={styles.listContainer}>
             {FEATURED_PLAYLISTS.map((pl) => (
               <GlassCard key={pl.id} style={styles.playlistCard}>
-                <Image source={{ uri: pl.coverArtUrl }} style={styles.plThumb} />
+                <Image source={{ uri: pl.coverArtUrl || undefined }} style={styles.plThumb} />
                 <View style={styles.plInfo}>
                   <Text style={styles.plTitle}>{pl.name}</Text>
                   <Text numberOfLines={2} style={styles.plDesc}>
@@ -218,7 +218,8 @@ export default function LibraryScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: '#000' },
   header: { paddingHorizontal: 16, paddingTop: 12, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.1)' },
-  titleRow: { flexDirection: 'row', itemsCenter: 'center', gap: 10 },
+  topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   title: { fontSize: 22, fontWeight: '800' },
   offlineToggleRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   offlineText: { fontSize: 12, fontWeight: '700' },

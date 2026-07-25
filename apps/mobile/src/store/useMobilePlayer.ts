@@ -26,6 +26,10 @@ interface InternalState {
   _downloads: Map<string, { localUri: string; size: Bytes; quality: 'STANDARD' | 'HIGH' }>
   _shuffleIndices: number[]
   _shuffleIdx: number
+  _onPlaybackStatusUpdate: (status: AVPlaybackStatus) => void
+  _ensureAudioMode: () => Promise<void>
+  _getTrackSource: (track: Track) => Promise<{ uri: string; isOffline: boolean }>
+  _unloadCurrent: () => Promise<void>
 }
 
 export const useMobilePlayer = create<PlayerSlice & InternalState>((set, get) => ({

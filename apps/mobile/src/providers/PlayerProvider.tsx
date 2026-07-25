@@ -24,16 +24,9 @@ export function PlayerProvider({ children }: PlayerProviderProps) {
 
   useEffect(() => {
     try {
-      const unsub = useMobilePlayer.subscribe(
-        (s) => ({
-          ct: s.currentTrack,
-          ps: s.playbackState,
-        }),
-        () => {
-          // NOTE: react-native-track-player handles lockscreen controls separately
-          // Here we set basic NowPlaying info for older APIs
-        },
-      )
+      const unsub = useMobilePlayer.subscribe((s) => {
+        // Basic lockscreen / state tracking if needed
+      })
       return () => unsub()
     } catch {}
   }, [])

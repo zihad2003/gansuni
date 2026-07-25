@@ -168,44 +168,48 @@ export default function HomeScreen() {
                     },
                   ]}
                 >
-                  <Image
-                    source={{ uri: t.album.coverArtUrl }}
-                    style={styles.qpCover}
-                    contentFit="cover"
-                  />
-                  <View style={styles.qpMeta}>
-                    <Text
-                      numberOfLines={2}
-                      style={[
-                        styles.qpTitle,
-                        { color: isCurrent(t.id) ? '#1DB954' : themeColors.textPrimary },
-                      ]}
-                    >
-                      {t.title}
-                    </Text>
-                    <Text numberOfLines={1} style={[styles.qpArtist, { color: themeColors.textSecondary }]}>
-                      {t.artist.name}
-                    </Text>
-                  </View>
-                  <View
-                    style={[
-                      styles.qpPlay,
-                      {
-                        backgroundColor: playing ? '#1DB954' : 'rgba(255,255,255,0.15)',
-                        opacity: pressed || playing ? 1 : 0,
-                      },
-                    ]}
-                  >
-                    {playing ? (
-                      <View style={styles.miniEq}>
-                        {[0, 1, 2].map((i) => (
-                          <View key={i} style={styles.miniEqBar} />
-                        ))}
+                  {({ pressed }) => (
+                    <>
+                      <Image
+                        source={{ uri: t.album?.coverArtUrl || undefined }}
+                        style={styles.qpCover}
+                        contentFit="cover"
+                      />
+                      <View style={styles.qpMeta}>
+                        <Text
+                          numberOfLines={2}
+                          style={[
+                            styles.qpTitle,
+                            { color: isCurrent(t.id) ? '#F59E0B' : themeColors.textPrimary },
+                          ]}
+                        >
+                          {t.title}
+                        </Text>
+                        <Text numberOfLines={1} style={[styles.qpArtist, { color: themeColors.textSecondary }]}>
+                          {t.artist?.name}
+                        </Text>
                       </View>
-                    ) : (
-                      <Play size={14} fill="#fff" strokeWidth={0} color="#fff" style={{ marginLeft: 1 }} />
-                    )}
-                  </View>
+                      <View
+                        style={[
+                          styles.qpPlay,
+                          {
+                            backgroundColor: playing ? '#F59E0B' : 'rgba(255,255,255,0.15)',
+                            opacity: pressed || playing ? 1 : 0,
+                          },
+                        ]}
+                      >
+                        {playing ? (
+                          <View style={styles.miniEq}>
+                            {[0, 1, 2].map((i) => (
+                              <View key={i} style={styles.miniEqBar} />
+                            ))}
+                          </View>
+                        ) : (
+                          <Play size={14} fill="#000" color="#000" strokeWidth={0} />
+                        )}
+                      </View>
+                    </>
+                  )}
                 </Pressable>
               )
             })}
@@ -237,7 +241,7 @@ export default function HomeScreen() {
               >
                 <View style={styles.playlistCoverWrap}>
                   <Image
-                    source={{ uri: pl.coverArtUrl }}
+                    source={{ uri: pl.coverArtUrl || undefined }}
                     style={styles.playlistCover}
                     contentFit="cover"
                   />
@@ -255,7 +259,7 @@ export default function HomeScreen() {
                     {pl.description}
                   </Text>
                   <Text style={[styles.playlistCount, { color: themeColors.textSecondary }]}>
-                    {pl.trackCount} songs
+                    {pl.tracks?.length || 0} songs
                   </Text>
                 </View>
               </Pressable>
@@ -311,7 +315,7 @@ export default function HomeScreen() {
                   </View>
 
                   <Image
-                    source={{ uri: t.album.coverArtUrl }}
+                    source={{ uri: t.album?.coverArtUrl || undefined }}
                     style={styles.trackCover}
                     contentFit="cover"
                   />
@@ -321,13 +325,13 @@ export default function HomeScreen() {
                       numberOfLines={1}
                       style={[
                         styles.trackTitle,
-                        { color: active ? '#1DB954' : themeColors.textPrimary },
+                        { color: active ? '#F59E0B' : themeColors.textPrimary },
                       ]}
                     >
                       {t.title}
                     </Text>
                     <Text numberOfLines={1} style={[styles.trackArtist, { color: themeColors.textSecondary }]}>
-                      {t.artist.name}
+                      {t.artist?.name}
                     </Text>
                   </View>
 

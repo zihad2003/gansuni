@@ -14,10 +14,10 @@
     "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": true,
     "moduleResolution": "bundler",
-    "types": ["native", "react-native"],
+    "types": ["react-native"],
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"],
+      "@/*": ["./src/*", "./*"],
       "@gansuni/shared": ["../../packages/shared/src/index.ts"],
       "@gansuni/shared/*": ["../../packages/shared/src/*"]
     }

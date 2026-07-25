@@ -35,7 +35,7 @@ import {
   Heart,
   Share2,
   Download,
-  DownloadCheck,
+  CheckCircle,
   ListMusic,
   Gauge,
   Maximize2,
@@ -362,7 +362,7 @@ export default function FullPlayerScreen() {
               ]}
             >
               {downloaded ? (
-                <DownloadCheck size={22} color="#F59E0B" fill="#F59E0B22" />
+                <CheckCircle size={22} color="#F59E0B" fill="#F59E0B22" />
               ) : downloading ? (
                 <Text style={[styles.dlPct, { color: themeColors.textPrimary }]}>
                   {Math.round(downloadPct * 100)}%
@@ -395,7 +395,6 @@ export default function FullPlayerScreen() {
               maximumTrackTintColor="rgba(255,255,255,0.22)"
               thumbTintColor="#fff"
               style={styles.volSlider}
-              thumbStyle={{ width: 14, height: 14 }}
               tapToSeek
             />
           </View>

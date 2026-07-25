@@ -52,13 +52,11 @@ export function MiniPlayer({ onPress }: MiniPlayerProps) {
   const cover = track?.album?.coverArtUrl ?? null
 
   return (
-    <AnimatedPressable
+    <Pressable
       onPress={onPress}
       style={({ pressed }) => [
         styles.container,
-        useAnimatedStyle(() => ({
-          transform: [{ scale: scaleAnim(pressed) }],
-        }))(),
+        { opacity: pressed ? 0.92 : 1 },
       ]}
     >
       <GlassCard
@@ -136,7 +134,7 @@ export function MiniPlayer({ onPress }: MiniPlayerProps) {
           </View>
         </View>
       </GlassCard>
-    </AnimatedPressable>
+    </Pressable>
   )
 }
 
