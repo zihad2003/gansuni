@@ -50,7 +50,7 @@ export default function LibraryPage(): ReactNode {
                 </div>
                 <div className="flex-1">
                   <span className="text-xs font-extrabold uppercase tracking-wider text-pink-300">Playlist</span>
-                  <h1 className="text-3xl sm:text-5xl font-black text-white mt-1">Liked Songs (পছন্দের গান)</h1>
+                  <h1 className="text-3xl sm:text-5xl font-black text-white mt-1">Liked Songs</h1>
                   <p className="text-xs sm:text-sm text-white/80 mt-2 font-medium">
                     {likedTracks.length} saved tracks • Total duration: {formatDuration(totalDurationMs)}
                   </p>
@@ -101,9 +101,9 @@ export default function LibraryPage(): ReactNode {
                   {likedTracks.length === 0 ? (
                     <div className="p-12 text-center bg-white/5 rounded-2xl border border-white/10">
                       <Heart size={40} className="mx-auto text-white/30 mb-3" />
-                      <h3 className="text-lg font-bold text-white">এখনো কোনো গান পছন্দ করা হয়নি</h3>
+                      <h3 className="text-lg font-bold text-white">No Liked Songs Yet</h3>
                       <p className="text-xs text-white/60 mt-1 max-w-sm mx-auto">
-                        আপনার পছন্দের গানের পাশে হৃদয় (Heart) আইকনে ক্লিক করে প্রিয় গানগুলো সংরক্ষণ করুন।
+                        Click the heart icon on any song to save your favorite tracks to your library.
                       </p>
                       <Link href="/browse" className="inline-block mt-4 text-xs font-bold text-[#F59E0B] hover:underline">
                         Browse music catalog →

@@ -14,7 +14,7 @@ export default function SearchPage(): ReactNode {
   const [filter, setFilter] = useState<'ALL' | 'TRACKS' | 'ARTISTS' | 'ALBUMS'>('ALL')
   const [liveTracks, setLiveTracks] = useState<any[]>([])
   const [isSearching, setIsSearching] = useState(false)
-  
+
   const play = useAudioPlayer((s) => s.play)
   const currentTrackId = useAudioPlayer((s) => s.currentTrack?.id)
   const playbackState = useAudioPlayer((s) => s.playbackState)
@@ -89,7 +89,7 @@ export default function SearchPage(): ReactNode {
                         : 'bg-white/5 text-white/70 border-white/10 hover:bg-white/10 hover:text-white'
                     }`}
                   >
-                    {f === 'ALL' ? 'সব (All)' : f === 'TRACKS' ? 'গান (Songs)' : f === 'ARTISTS' ? 'শিল্পী (Artists)' : 'অ্যালবাম (Albums)'}
+                    {f === 'ALL' ? 'All' : f === 'TRACKS' ? 'Songs' : f === 'ARTISTS' ? 'Artists' : 'Albums'}
                   </button>
                 ))}
               </div>
@@ -98,7 +98,7 @@ export default function SearchPage(): ReactNode {
               {query.trim() && (
                 <div className="text-sm text-white/60 flex items-center gap-2">
                   {isSearching && <Loader2 size={16} className="animate-spin text-[#F59E0B]" />}
-                  <span><span className="font-semibold text-white">"{query}"</span> এর জন্য লাইভ গান পাওয়া গেছে ({displayTracks.length}):</span>
+                  <span>Found <span className="font-semibold text-white">{displayTracks.length}</span> live tracks for <span className="font-semibold text-white">"{query}"</span>:</span>
                 </div>
               )}
 
@@ -107,12 +107,12 @@ export default function SearchPage(): ReactNode {
                 <section>
                   <h2 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
                     <Music size={18} className="text-[#F59E0B]" />
-                    <span>গান (Songs - {displayTracks.length})</span>
+                    <span>Songs ({displayTracks.length})</span>
                   </h2>
 
                   {displayTracks.length === 0 ? (
                     <div className="p-8 text-center bg-white/5 rounded-2xl border border-white/10 text-white/60 text-sm">
-                      কোনো গান পাওয়া যায়নি
+                      No songs found
                     </div>
                   ) : (
                     <div className="glass-card-strong overflow-hidden rounded-2xl divide-y divide-white/5">
@@ -170,7 +170,7 @@ export default function SearchPage(): ReactNode {
                 <section>
                   <h2 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
                     <Mic2 size={18} className="text-[#F97316]" />
-                    <span>শিল্পী (Artists - {filteredArtists.length})</span>
+                    <span>Artists ({filteredArtists.length})</span>
                   </h2>
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                     {filteredArtists.map((a) => (
@@ -195,7 +195,7 @@ export default function SearchPage(): ReactNode {
                 <section>
                   <h2 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
                     <Disc size={18} className="text-purple-400" />
-                    <span>অ্যালবাম (Albums - {filteredAlbums.length})</span>
+                    <span>Albums ({filteredAlbums.length})</span>
                   </h2>
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                     {filteredAlbums.map((al) => (
@@ -204,11 +204,11 @@ export default function SearchPage(): ReactNode {
                         href={`/album/${al.id}`}
                         className="group p-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all cursor-pointer"
                       >
-                        <div className="relative aspect-square rounded-xl overflow-hidden mb-3 shadow-lg group-hover:scale-105 transition-transform">
+                        <div className="relative w-full aspect-square rounded-xl overflow-hidden mb-3 shadow-lg group-hover:scale-105 transition-transform">
                           <Image src={al.coverArtUrl || ''} alt={al.title} fill sizes="200px" className="object-cover" />
                         </div>
                         <div className="font-bold text-sm text-white truncate">{al.title}</div>
-                        <div className="text-xs text-white/50 truncate mt-1">Album • {al.totalTracks} songs</div>
+                        <div className="text-xs text-white/50 truncate mt-1">Album • {al.totalTracks} tracks</div>
                       </Link>
                     ))}
                   </div>

@@ -135,7 +135,7 @@ export default function HomePage(): ReactNode {
               {userUploadedTracks.length > 0 && (
                 <section>
                   <SectionHeader
-                    title="আপনার আপলোড করা গান (Your Uploaded Songs)"
+                    title="Your Uploaded Songs"
                     action={<Link href="/upload" className="text-xs sm:text-sm font-semibold text-amber-400 hover:underline">Manage uploads ({userUploadedTracks.length})</Link>}
                   />
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 sm:gap-4">
@@ -169,7 +169,7 @@ export default function HomePage(): ReactNode {
 
               {/* NEW RELEASES SECTION */}
               <section>
-                <SectionHeader title="নতুন গান (New Releases)" action={<Link href="/browse" className="text-xs sm:text-sm font-semibold text-amber-400 hover:underline">Explore all</Link>} />
+                <SectionHeader title="New Releases" action={<Link href="/browse" className="text-xs sm:text-sm font-semibold text-amber-400 hover:underline">Explore all</Link>} />
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 sm:gap-4">
                   {NEW_RELEASES.map((t) => {
                     const playing = isCurrentPlaying(t.id)
@@ -209,7 +209,7 @@ export default function HomePage(): ReactNode {
 
               {/* MOST POPULAR ON INTERNET */}
               <section>
-                <SectionHeader title="ইন্টারনেটে সবচেয়ে জনপ্রিয় (Most Popular Internet Hits)" />
+                <SectionHeader title="Most Popular Internet Hits" />
                 <div className="glass-card-strong overflow-hidden rounded-2xl">
                   <div className="divide-y divide-white/5">
                     {POPULAR_INTERNET_TRACKS.map((t, idx) => {
@@ -295,9 +295,9 @@ export default function HomePage(): ReactNode {
                 <div className="flex flex-col sm:flex-row justify-between items-center gap-4 text-xs text-white/50">
                   <div className="flex items-center gap-2 font-semibold text-white">
                     <Music2 size={16} style={{ color: '#F59E0B' }} />
-                    গানশুনি · Gaansuni Bengali Audio Ecosystem
+                    Gaansuni Audio Ecosystem
                   </div>
-                  <div>© {new Date().getFullYear()} Gaansuni. Designed for Bengali Music Lovers globally.</div>
+                  <div>© {new Date().getFullYear()} Gaansuni. All rights reserved.</div>
                 </div>
               </footer>
             </div>

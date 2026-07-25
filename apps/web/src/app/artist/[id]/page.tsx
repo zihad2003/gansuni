@@ -69,7 +69,7 @@ export default function ArtistDetailPage(): ReactNode {
 
               {/* POPULAR TRACKS */}
               <section>
-                <h2 className="text-xl font-extrabold text-white mb-4">জনপ্রিয় গানসমূহ (Popular Songs)</h2>
+                <h2 className="text-xl font-extrabold text-white mb-4">Popular Songs</h2>
                 <div className="glass-card-strong overflow-hidden rounded-2xl divide-y divide-white/5">
                   {tracksToPlay.map((t, idx) => {
                     const playing = isCurrentPlaying(t.id)

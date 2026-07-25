@@ -33,7 +33,7 @@ export default function BrowsePage(): ReactNode {
                   <Compass size={14} />
                   <span>Browse All Categories</span>
                 </div>
-                <h1 className="text-3xl sm:text-4xl font-extrabold text-white">Explore Bengali Music (সব ক্যাটাগরি)</h1>
+                <h1 className="text-3xl sm:text-4xl font-extrabold text-white">Explore Music</h1>
                 <p className="mt-2 text-sm text-white/70 max-w-xl">
                   Discover Rabindra Sangeet, Nazrul Geeti, Bangla Folk, Baul Fusion, Hiphop BD, and viral internet hits in high fidelity audio.
                 </p>
@@ -41,7 +41,7 @@ export default function BrowsePage(): ReactNode {
 
               {/* GENRES & MOODS */}
               <section>
-                <h2 className="text-xl font-extrabold text-white mb-4">সব ধরণের জনরা (Genres & Moods)</h2>
+                <h2 className="text-xl font-extrabold text-white mb-4">Genres & Moods</h2>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                   {GENRES_DATA.map((g) => (
                     <div
@@ -61,7 +61,7 @@ export default function BrowsePage(): ReactNode {
 
               {/* TOP ARTISTS */}
               <section>
-                <h2 className="text-xl font-extrabold text-white mb-4">শীর্ষ জনপ্রিয় শিল্পী (Top Artists)</h2>
+                <h2 className="text-xl font-extrabold text-white mb-4">Top Artists</h2>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
                   {EXPANDED_ARTISTS.map((a) => (
                     <Link
@@ -84,7 +84,7 @@ export default function BrowsePage(): ReactNode {
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-xl font-extrabold text-white flex items-center gap-2">
                     <Sparkles size={20} className="text-[#F59E0B]" />
-                    <span>নতুন রিলিজ (New Releases)</span>
+                    <span>New Releases</span>
                   </h2>
                   <button onClick={onPlayAllNew} className="text-xs font-semibold text-[#F59E0B] hover:underline">
                     Play all new

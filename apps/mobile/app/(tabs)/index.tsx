@@ -106,7 +106,7 @@ export default function HomeScreen() {
                 Assalamu Alaikum 👋
               </Text>
               <Text style={[styles.greetingName, { color: themeColors.textPrimary }]}>
-                গানশুনি · Good to see you
+                Gaansuni · Good to see you
               </Text>
             </View>
             <Pressable
@@ -353,7 +353,7 @@ export default function HomeScreen() {
 
         <View style={styles.footer}>
           <Text style={[styles.footerText, { color: themeColors.textMuted }]}>
-            গানশুনি · © {new Date().getFullYear()}
+            Gaansuni · © {new Date().getFullYear()}
           </Text>
         </View>
       </ScrollView>

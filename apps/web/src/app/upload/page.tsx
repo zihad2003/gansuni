@@ -90,16 +90,16 @@ export default function UploadPage(): ReactNode {
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-xl font-extrabold text-white flex items-center gap-2">
                     <Music size={20} className="text-[#F59E0B]" />
-                    <span>আপনার আপলোডকৃত গানসমূহ (Your Uploads - {uploadedTracks.length})</span>
+                    <span>Your Uploads ({uploadedTracks.length})</span>
                   </h2>
                 </div>
 
                 {uploadedTracks.length === 0 ? (
                   <div className="p-12 text-center bg-white/5 rounded-2xl border border-white/10">
                     <UploadCloud size={48} className="mx-auto text-amber-400/50 mb-3" />
-                    <h3 className="text-lg font-bold text-white">এখনো কোনো গান আপলোড করা হয়নি</h3>
+                    <h3 className="text-lg font-bold text-white">No Uploaded Songs Yet</h3>
                     <p className="text-xs text-white/60 mt-1 max-w-md mx-auto">
-                      আপনার নিজস্ব MP3 গান আপলোড করে আপনার লোকাল মিউজিক লাইব্রেরিতে যুক্ত করুন।
+                      Upload your personal MP3 audio tracks to add them to your cloud music library.
                     </p>
                     <button
                       onClick={() => setIsModalOpen(true)}

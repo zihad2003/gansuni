@@ -103,7 +103,7 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps): ReactNode {
             <div className="w-16 h-16 rounded-full bg-[#F59E0B]/20 text-[#F59E0B] border border-[#F59E0B]/40 flex items-center justify-center mx-auto mb-4">
               <Check size={32} />
             </div>
-            <h2 className="text-2xl font-black text-white">গান সফলভাবে আপলোড হয়েছে!</h2>
+            <h2 className="text-2xl font-black text-white">Track Uploaded Successfully!</h2>
             <p className="text-sm text-white/70 mt-1">
               "{uploadedTrack.title}" by {uploadedTrack.artist?.name} is ready for playback.
             </p>
@@ -136,7 +136,7 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps): ReactNode {
             <div>
               <h2 className="text-2xl font-black text-white flex items-center gap-2">
                 <UploadCloud size={24} className="text-[#F59E0B]" />
-                <span>গান আপলোড করুন (Upload MP3)</span>
+                <span>Upload Song (MP3)</span>
               </h2>
               <p className="text-xs text-white/60 mt-1">
                 Upload your custom MP3, WAV, M4A, or FLAC songs directly into your local Gaansuni library.
@@ -180,7 +180,7 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps): ReactNode {
             {/* METADATA INPUTS */}
             <div className="grid sm:grid-cols-2 gap-4">
               <div>
-                <label className="text-xs font-bold text-white/70 block mb-1">Track Title (গানের নাম)</label>
+                <label className="text-xs font-bold text-white/70 block mb-1">Track Title</label>
                 <input
                   type="text"
                   required
@@ -192,7 +192,7 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps): ReactNode {
               </div>
 
               <div>
-                <label className="text-xs font-bold text-white/70 block mb-1">Artist Name (শিল্পী)</label>
+                <label className="text-xs font-bold text-white/70 block mb-1">Artist Name</label>
                 <input
                   type="text"
                   required
@@ -204,7 +204,7 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps): ReactNode {
               </div>
 
               <div>
-                <label className="text-xs font-bold text-white/70 block mb-1">Album Title (অ্যালবাম)</label>
+                <label className="text-xs font-bold text-white/70 block mb-1">Album Title</label>
                 <input
                   type="text"
                   value={album}
@@ -215,7 +215,7 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps): ReactNode {
               </div>
 
               <div>
-                <label className="text-xs font-bold text-white/70 block mb-1">Genre (ধরণ)</label>
+                <label className="text-xs font-bold text-white/70 block mb-1">Genre</label>
                 <select
                   value={genre}
                   onChange={(e) => setGenre(e.target.value)}
@@ -233,7 +233,7 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps): ReactNode {
 
             {/* COVER IMAGE PICKER */}
             <div>
-              <label className="text-xs font-bold text-white/70 block mb-1">Cover Artwork (কভার ছবি - optional)</label>
+              <label className="text-xs font-bold text-white/70 block mb-1">Cover Artwork (optional)</label>
               <div className="flex items-center gap-3">
                 <input
                   ref={coverInputRef}

@@ -37,7 +37,7 @@ export default function MadeForYouPage(): ReactNode {
                   <Sparkles size={14} />
                   <span>AI Personalized Recommendations</span>
                 </div>
-                <h1 className="text-3xl sm:text-4xl font-extrabold text-white">Made For You (আপনার জন্য)</h1>
+                <h1 className="text-3xl sm:text-4xl font-extrabold text-white">Made For You</h1>
                 <p className="mt-2 text-sm text-white/70 max-w-xl">
                   Daily mixes, discovery playlists, and mood recommendations curated specifically based on your unique taste in Bengali music.
                 </p>
