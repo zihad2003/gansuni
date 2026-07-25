@@ -48,7 +48,6 @@ export function Sidebar(): ReactNode {
           <SideNavLink icon={Search} label="Search" href="/search" active={isNavActive('/search')} />
           <SideNavLink icon={Compass} label="Browse All" href="/browse" active={isNavActive('/browse')} />
           <SideNavLink icon={Sparkles} label="Made For You" href="/made-for-you" active={isNavActive('/made-for-you')} />
-          <SideNavLink icon={UploadCloud} label="Upload Song" href="/upload" active={isNavActive('/upload')} />
         </nav>
 
         <div className="glass-card p-4">

@@ -86,21 +86,7 @@ export function HeaderNav({
             <span>App Download</span>
           </button>
 
-          <button
-            onClick={() => router.push('/upload')}
-            className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold bg-white/10 hover:bg-white/20 border border-white/15 text-white transition-all"
-          >
-            <UploadCloud size={14} className="text-[#F59E0B]" />
-            <span>Upload</span>
-          </button>
 
-          <button
-            onClick={() => router.push('/made-for-you')}
-            className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-white/10 hover:bg-white/20 border border-white/15 text-amber-400 transition-all"
-          >
-            <Sparkles size={14} />
-            <span>Pro</span>
-          </button>
         </div>
       </header>
 
