@@ -94,7 +94,7 @@ export default function HomePage(): ReactNode {
                   </span>
 
                   <h1 className="mt-4 text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight leading-[1.1] text-balance text-white">
-                    গানশুনি (Gaansuni) — Your gateway to
+                    Gaansuni — Your gateway to
                     <br />
                     <span style={{
                       background: 'linear-gradient(90deg, #F59E0B 0%, #F97316 50%, #A78BFA 100%)',

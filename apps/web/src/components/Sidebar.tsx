@@ -28,8 +28,8 @@ export function Sidebar(): ReactNode {
               <Music2 size={20} strokeWidth={2.5} />
             </div>
             <div>
-              <div className="font-extrabold text-base tracking-tight text-white">গানশুনি</div>
-              <div className="text-[10px] text-white/50 font-semibold tracking-wider uppercase">Gaansuni Web</div>
+              <div className="font-extrabold text-base tracking-tight text-white">Gaansuni</div>
+              <div className="text-[10px] text-white/50 font-semibold tracking-wider uppercase">Music Streaming</div>
             </div>
           </div>
 

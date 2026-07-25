@@ -38,7 +38,7 @@ export function AppDownloadModal({ isOpen, onClose }: AppDownloadModalProps) {
       }
       setDeferredPrompt(null)
     } else {
-      alert('Gaansuni PWA App install instructions:\n\nAndroid Chrome: Click menu ⋮ -> "Add to Home screen" or "Install App".\niOS Safari: Click Share button ➔ "Add to Home Screen".')
+      alert('Gaansuni PWA App Install Instructions:\n\nAndroid Chrome: Tap menu ⋮ -> "Add to Home screen" or "Install App".\niOS Safari: Tap Share icon ➔ "Add to Home Screen".')
     }
   }
 
@@ -60,7 +60,7 @@ export function AppDownloadModal({ isOpen, onClose }: AppDownloadModalProps) {
           </div>
           <div>
             <h2 className="text-xl font-bold text-white flex items-center gap-1.5">
-              গানশুনি অ্যাপ (Gaansuni App)
+              Gaansuni App
               <Sparkles size={16} className="text-amber-500" />
             </h2>
             <p className="text-xs text-white/60">Offline Music Streaming • High Quality 320kbps</p>
@@ -71,24 +71,24 @@ export function AppDownloadModal({ isOpen, onClose }: AppDownloadModalProps) {
           <div className="flex items-start gap-3 p-3 rounded-2xl bg-white/5 border border-white/10">
             <CheckCircle2 size={18} className="text-amber-500 mt-0.5 shrink-0" />
             <div className="text-xs">
-              <span className="font-bold text-white block">অফলাইন মিউজিক ডাউনলোড</span>
-              <span className="text-white/70">ইন্টারনেট ছাড়াও পছন্দের সব গান ফ্রি শুনুন।</span>
+              <span className="font-bold text-white block">Offline Music Downloads</span>
+              <span className="text-white/70">Listen to all your favorite tracks without internet.</span>
             </div>
           </div>
 
           <div className="flex items-start gap-3 p-3 rounded-2xl bg-white/5 border border-white/10">
             <CheckCircle2 size={18} className="text-amber-500 mt-0.5 shrink-0" />
             <div className="text-xs">
-              <span className="font-bold text-white block">সুপারফাস্ট প্লেব্যাক & জিরো বাফারিং</span>
-              <span className="text-white/70">মোবাইল ফ্রেন্ডলি অ্যাপ ইন্টারফেস।</span>
+              <span className="font-bold text-white block">Superfast Playback & Zero Buffering</span>
+              <span className="text-white/70">Mobile-optimized interface and instant streaming.</span>
             </div>
           </div>
 
           <div className="flex items-start gap-3 p-3 rounded-2xl bg-white/5 border border-white/10">
             <ShieldCheck size={18} className="text-amber-500 mt-0.5 shrink-0" />
             <div className="text-xs">
-              <span className="font-bold text-white block">১০০% ফ্রি & লিগ্যাল ওপেন সোর্স</span>
-              <span className="text-white/70">পিসি ও মোবাইল দুই জায়গাতেই ইন্সটলযোগ্য।</span>
+              <span className="font-bold text-white block">100% Free & Open Source</span>
+              <span className="text-white/70">Installable on Desktop and Mobile devices.</span>
             </div>
           </div>
         </div>
@@ -96,7 +96,7 @@ export function AppDownloadModal({ isOpen, onClose }: AppDownloadModalProps) {
         <div className="space-y-2">
           {isInstalled ? (
             <div className="w-full py-3 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 font-bold text-center text-sm">
-              ✓ অ্যাপ অলরেডি ইন্সটল করা আছে
+              ✓ App Already Installed
             </div>
           ) : (
             <button
@@ -104,7 +104,7 @@ export function AppDownloadModal({ isOpen, onClose }: AppDownloadModalProps) {
               className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 text-black font-extrabold text-sm flex items-center justify-center gap-2 hover:opacity-95 active:scale-98 transition-all shadow-xl"
             >
               <Download size={18} />
-              <span>ইন্সটল অ্যাপ / Install Mobile App</span>
+              <span>Install Mobile App / PWA</span>
             </button>
           )}
 
@@ -115,7 +115,7 @@ export function AppDownloadModal({ isOpen, onClose }: AppDownloadModalProps) {
             className="w-full py-3 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-semibold text-xs flex items-center justify-center gap-2 transition-all border border-white/10"
           >
             <Smartphone size={16} className="text-amber-500" />
-            <span>ডাউনলোড অ্যান্ড্রয়েড APK (Direct APK Download)</span>
+            <span>Direct Android APK Download</span>
           </a>
         </div>
       </div>

@@ -57,7 +57,7 @@ export default function LibraryScreen() {
           <View style={styles.titleRow}>
             <Library size={24} color="#F59E0B" />
             <Text style={[styles.title, { color: themeColors.textPrimary }]}>
-              Library (লাইব্রেরি)
+              Your Library
             </Text>
           </View>
 

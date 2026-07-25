@@ -63,7 +63,7 @@ export const FEATURED_PLAYLISTS: Playlist[] = [
   },
   {
     id: 'p2',
-    name: 'সকালের রবীন্দ্র সঙ্গীত (Full Songs)',
+    name: 'Morning Tagore Classics (Full Songs)',
     description: 'Complete full-length Rabindra Sangeet recordings and acoustic compositions',
     coverArtUrl: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=600&auto=format&fit=crop&q=80',
     ownerId: 'u1',

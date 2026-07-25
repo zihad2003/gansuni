@@ -61,7 +61,7 @@ export function HeaderNav({
                 type="text"
                 value={query}
                 onChange={handleInputChange}
-                placeholder="গান, শিল্পী বা অ্যালবাম খুঁজুন... (Search songs)"
+                placeholder="Search songs, artists, albums..."
                 className="w-full pl-10 pr-4 py-2 rounded-full bg-white/10 border border-white/15 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-[#F59E0B] text-sm transition-all"
               />
             </form>
