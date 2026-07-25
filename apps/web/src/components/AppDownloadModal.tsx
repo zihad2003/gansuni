@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, type ReactNode } from 'react'
 import { Download, Smartphone, CheckCircle2, X, Sparkles, ShieldCheck } from 'lucide-react'
 
 interface AppDownloadModalProps {
@@ -8,7 +8,7 @@ interface AppDownloadModalProps {
   onClose: () => void
 }
 
-export function AppDownloadModal({ isOpen, onClose }: AppDownloadModalProps) {
+export function AppDownloadModal({ isOpen, onClose }: AppDownloadModalProps): ReactNode {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null)
   const [isInstalled, setIsInstalled] = useState(false)
 
