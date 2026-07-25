@@ -1,48 +1,30 @@
-import { NextRequest, NextResponse } from 'next/server'
-import type { Track } from '@gansuni/shared'
-
-export const dynamic = 'force-dynamic'
-
-export async function GET(req: NextRequest) {
+export async function onRequestGet(context) {
   try {
-    const { searchParams } = new URL(req.url)
-    const query = searchParams.get('q') || searchParams.get('query') || 'Coke Studio Bangla'
-    const limit = Math.min(30, parseInt(searchParams.get('limit') || '20', 10))
+    const url = new URL(context.request.url)
+    const query = url.searchParams.get('q') || url.searchParams.get('query') || 'Coke Studio Bangla'
+    const limit = Math.min(30, parseInt(url.searchParams.get('limit') || '20', 10))
 
-    const allTracks: Track[] = []
-    const trackTitlesSet = new Set<string>()
+    const allTracks = []
+    const trackTitlesSet = new Set()
 
-    // 1. Fetch iTunes Apple Music Catalog (Provides 100% accurate global & Bengali metadata + 600x600 artwork)
+    // 1. iTunes Apple Music Catalog
     try {
       const itunesRes = await fetch(
         `https://itunes.apple.com/search?term=${encodeURIComponent(query)}&country=BD&entity=song&limit=${limit}`,
-        {
-          headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-            'Accept': 'application/json',
-          },
-          cache: 'no-store',
-        }
+        { headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', Accept: 'application/json' } }
       )
-
       if (itunesRes.ok) {
         const itunesData = await itunesRes.json()
-        const results = itunesData?.results || []
-
-        for (const item of results) {
-          if (!item || !item.trackName) continue
+        for (const item of (itunesData?.results || [])) {
+          if (!item?.trackName) continue
           const title = item.trackName
           const artistName = item.artistName || 'Artist'
           const normKey = `${title.toLowerCase()}_${artistName.toLowerCase()}`
-
           if (trackTitlesSet.has(normKey)) continue
           trackTitlesSet.add(normKey)
 
-          const coverArtUrl = (item.artworkUrl100 || item.artworkUrl60 || '').replace('100x100bb', '600x600bb')
+          const coverArtUrl = (item.artworkUrl100 || '').replace('100x100bb', '600x600bb')
           const durationMs = item.trackTimeMillis || 240000
-
-          // Construct full stream endpoint query if preview URL is present
-          const fullAudioUrl = `https://discoveryprovider.audius.co/v1/tracks/search?query=${encodeURIComponent(artistName + ' ' + title)}&app_name=Gaansuni`
 
           allTracks.push({
             id: `itunes_${item.trackId}`,
@@ -74,7 +56,7 @@ export async function GET(req: NextRequest) {
               createdAt: item.releaseDate || new Date().toISOString(),
               updatedAt: new Date().toISOString(),
             },
-            audioUrl: fullAudioUrl,
+            audioUrl: `https://discoveryprovider.audius.co/v1/tracks/search?query=${encodeURIComponent(artistName + ' ' + title)}&app_name=Gaansuni`,
             durationMs,
             trackNumber: item.trackNumber || 1,
             discNumber: item.discNumber || 1,
@@ -86,37 +68,25 @@ export async function GET(req: NextRequest) {
           })
         }
       }
-    } catch (e) {
-      console.warn('iTunes fetch error:', e)
-    }
+    } catch {}
 
-    // 2. Fetch Audius Open Catalog (Provides full-length 320kbps MP3 streams)
+    // 2. Audius Open Catalog
     try {
       const audiusRes = await fetch(
         `https://discoveryprovider.audius.co/v1/tracks/search?query=${encodeURIComponent(query)}&app_name=Gaansuni`,
-        { headers: { 'Accept': 'application/json' }, next: { revalidate: 1800 } }
+        { headers: { Accept: 'application/json' } }
       )
-
       if (audiusRes.ok) {
         const audiusData = await audiusRes.json()
-        const results = audiusData?.data || []
-
-        for (const item of results) {
-          if (!item || !item.title) continue
+        for (const item of (audiusData?.data || [])) {
+          if (!item?.title) continue
           const title = item.title
           const artistName = item.user?.name || item.user?.handle || 'Bengali Artist'
           const normKey = `${title.toLowerCase()}_${artistName.toLowerCase()}`
-
           if (trackTitlesSet.has(normKey)) continue
           trackTitlesSet.add(normKey)
 
-          const coverArtUrl =
-            item.artwork?.['480x480'] ||
-            item.artwork?.['150x150'] ||
-            item.user?.profile_picture?.['480x480'] ||
-            'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=600&auto=format&fit=crop&q=80'
-
-          const fullStreamUrl = `https://discoveryprovider.audius.co/v1/tracks/${item.id}/stream?app_name=Gaansuni`
+          const coverArtUrl = item.artwork?.['480x480'] || item.artwork?.['150x150'] || item.user?.profile_picture?.['480x480'] || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=600&auto=format&fit=crop&q=80'
           const durationSec = Math.max(120, parseInt(item.duration || '240', 10))
           const durationMs = durationSec * 1000
 
@@ -149,7 +119,7 @@ export async function GET(req: NextRequest) {
               createdAt: new Date().toISOString(),
               updatedAt: new Date().toISOString(),
             },
-            audioUrl: fullStreamUrl,
+            audioUrl: `https://discoveryprovider.audius.co/v1/tracks/${item.id}/stream?app_name=Gaansuni`,
             durationMs,
             trackNumber: 1,
             discNumber: 1,
@@ -161,27 +131,21 @@ export async function GET(req: NextRequest) {
           })
         }
       }
-    } catch (e) {
-      console.warn('Audius fetch error:', e)
-    }
+    } catch {}
 
-    // 3. Fetch JioSaavn Web API
+    // 3. JioSaavn Web API
     try {
       const saavnRes = await fetch(
         `https://www.jiosaavn.com/api.php?__call=search.getResults&_format=json&_marker=0&api_version=4&ctx=web6dot0&p=1&n=${limit}&q=${encodeURIComponent(query)}`,
-        { headers: { 'User-Agent': 'Mozilla/5.0' }, cache: 'no-store' }
+        { headers: { 'User-Agent': 'Mozilla/5.0' } }
       )
-
       if (saavnRes.ok) {
         const saavnData = await saavnRes.json()
-        const results = saavnData?.results || []
-
-        for (const item of results) {
+        for (const item of (saavnData?.results || [])) {
           if (!item || (!item.title && !item.song)) continue
           const title = (item.title || item.song).replace(/&quot;/g, '"').replace(/&#039;/g, "'")
           const artistName = (item.more_info?.artistMap?.primary_artists?.[0]?.name || item.singers || 'Artist').replace(/&quot;/g, '"')
           const normKey = `${title.toLowerCase()}_${artistName.toLowerCase()}`
-
           if (trackTitlesSet.has(normKey)) continue
           trackTitlesSet.add(normKey)
 
@@ -236,18 +200,15 @@ export async function GET(req: NextRequest) {
           })
         }
       }
-    } catch (e) {
-      console.warn('JioSaavn web search error:', e)
-    }
+    } catch {}
 
-    return NextResponse.json({
+    return Response.json({
       query,
       source: 'Multi-Source Hybrid Search Engine (iTunes + Audius + JioSaavn)',
       count: allTracks.length,
       tracks: allTracks,
     })
-  } catch (error: any) {
-    console.error('Live music search error:', error)
-    return NextResponse.json({ error: error?.message || 'Failed to fetch live music' }, { status: 500 })
+  } catch (error) {
+    return Response.json({ error: error?.message || 'Failed to fetch live music' }, { status: 500 })
   }
 }

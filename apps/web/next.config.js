@@ -32,31 +32,19 @@ const withPWA = require('next-pwa')({
 })
 
 const nextConfig = withPWA({
+  output: 'export',
   reactStrictMode: true,
   poweredByHeader: false,
+  trailingSlash: true,
   transpilePackages: ['@gansuni/shared', '@gansuni/db'],
   experimental: {
     optimizePackageImports: ['lucide-react', 'framer-motion'],
-    serverComponentsExternalPackages: ['@prisma/client'],
   },
   images: {
+    unoptimized: true,
     remotePatterns: [
       { protocol: 'https', hostname: '**' },
     ],
-  },
-  async headers() {
-    return [
-      {
-        source: '/:path*',
-        headers: [
-          { key: 'X-Content-Type-Options', value: 'nosniff' },
-          { key: 'X-Frame-Options', value: 'DENY' },
-          { key: 'Referrer-Policy', value: 'origin-when-cross-origin' },
-          { key: 'X-XSS-Protection', value: '1; mode=block' },
-          { key: 'Permissions-Policy', value: 'audio=(*)' },
-        ],
-      },
-    ]
   },
 })
 
