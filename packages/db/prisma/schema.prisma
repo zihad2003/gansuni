@@ -1,0 +1,319 @@
+// Prisma Schema for Gansuni Audio Streaming Platform
+// CockroachDB Serverless (PostgreSQL-compatible)
+
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions", "fullTextSearch"]
+}
+
+datasource db {
+  provider = "cockroachdb"
+  url      = env("DATABASE_URL")
+}
+
+// ============ USERS & AUTH ============
+
+model User {
+  id          String   @id @default(cuid())
+  email       String   @unique
+  username    String?  @unique
+  displayName String
+  avatarUrl   String?
+  bio         String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  role        UserRole @default(USER)
+
+  // Auth relations
+  accounts     Account[]
+  sessions     Session[]
+
+  // User activity
+  playlists    Playlist[]      @relation("PlaylistOwner")
+  playlistAdds PlaylistTrack[] @relation("PlaylistTrackAddedBy")
+  likes        Like[]
+  follows      Follow[]        @relation("UserFollower")
+  following    Follow[]        @relation("UserFollowing")
+  playHistory  PlayHistory[]
+  downloads    Download[]
+}
+
+enum UserRole {
+  USER
+  ARTIST
+  PREMIUM
+  ADMIN
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ============ MUSIC CORE ============
+
+model Artist {
+  id           String   @id @default(cuid())
+  name         String
+  slug         String   @unique
+  bio          String?
+  avatarUrl    String?
+  coverImageUrl String?
+  verified     Boolean  @default(false)
+  monthlyListeners Int  @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  albums       Album[]
+  tracks       Track[]
+  features     TrackFeature[]
+  followers    Follow[]  @relation("ArtistFollowers")
+}
+
+model Album {
+  id           String   @id @default(cuid())
+  title        String
+  slug         String   @unique
+  artistId     String
+  coverArtUrl  String
+  releaseDate  DateTime?
+  totalTracks  Int      @default(0)
+  durationMs   Int      @default(0)
+  albumType    AlbumType @default(ALBUM)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  artist       Artist   @relation(fields: [artistId], references: [id], onDelete: Cascade)
+  tracks       Track[]
+  genres       AlbumGenre[]
+  likes        Like[]
+}
+
+enum AlbumType {
+  ALBUM
+  SINGLE
+  EP
+  COMPILATION
+}
+
+model Track {
+  id            String   @id @default(cuid())
+  title         String
+  slug          String   @unique
+  artistId      String
+  albumId       String
+  audioUrl      String
+  durationMs    Int
+  trackNumber   Int      @default(1)
+  discNumber    Int      @default(1)
+  explicit      Boolean  @default(false)
+  lyrics        String?
+  playCount     Int      @default(0)
+  isPremium     Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  artist        Artist   @relation(fields: [artistId], references: [id], onDelete: Cascade)
+  album         Album    @relation(fields: [albumId], references: [id], onDelete: Cascade)
+  features      TrackFeature[]
+  playlists     PlaylistTrack[]
+  likes         Like[]
+  playHistory   PlayHistory[]
+  downloads     Download[]
+}
+
+model TrackFeature {
+  trackId     String
+  artistId    String
+  assignedAt  DateTime @default(now())
+
+  track       Track    @relation(fields: [trackId], references: [id], onDelete: Cascade)
+  artist      Artist   @relation(fields: [artistId], references: [id], onDelete: Cascade)
+
+  @@id([trackId, artistId])
+}
+
+model Genre {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  slug        String   @unique
+  color       String?
+  description String?
+  iconUrl     String?
+
+  albums      AlbumGenre[]
+}
+
+model AlbumGenre {
+  albumId    String
+  genreId    String
+  assignedAt DateTime @default(now())
+
+  album      Album  @relation(fields: [albumId], references: [id], onDelete: Cascade)
+  genre      Genre  @relation(fields: [genreId], references: [id], onDelete: Cascade)
+
+  @@id([albumId, genreId])
+}
+
+// ============ USER INTERACTIONS ============
+
+model Playlist {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  coverArtUrl String?
+  ownerId     String
+  isPublic    Boolean  @default(false)
+  collaborative Boolean @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  owner       User           @relation("PlaylistOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  tracks      PlaylistTrack[]
+  likes       Like[]
+}
+
+model PlaylistTrack {
+  playlistId String
+  trackId    String
+  addedById  String
+  position   Int
+  addedAt    DateTime @default(now())
+
+  playlist   Playlist      @relation(fields: [playlistId], references: [id], onDelete: Cascade)
+  track      Track         @relation(fields: [trackId], references: [id], onDelete: Cascade)
+  addedBy    User          @relation("PlaylistTrackAddedBy", fields: [addedById], references: [id], onDelete: Cascade)
+
+  @@id([playlistId, trackId, position])
+  @@index([playlistId, position])
+}
+
+model Like {
+  id        String   @id @default(cuid())
+  userId    String
+  trackId   String?
+  albumId   String?
+  playlistId String?
+  likedAt   DateTime @default(now())
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  track     Track?    @relation(fields: [trackId], references: [id], onDelete: Cascade)
+  album     Album?    @relation(fields: [albumId], references: [id], onDelete: Cascade)
+  playlist  Playlist? @relation(fields: [playlistId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, trackId], name: "unique_user_track_like")
+  @@unique([userId, albumId], name: "unique_user_album_like")
+  @@unique([userId, playlistId], name: "unique_user_playlist_like")
+}
+
+model Follow {
+  id            String   @id @default(cuid())
+  followerId    String?
+  followingId   String?
+  artistId      String?
+  followedAt    DateTime @default(now())
+
+  follower      User?  @relation("UserFollower", fields: [followerId], references: [id], onDelete: Cascade)
+  following     User?  @relation("UserFollowing", fields: [followingId], references: [id], onDelete: Cascade)
+  artist        Artist? @relation("ArtistFollowers", fields: [artistId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId], name: "unique_user_follow")
+  @@unique([followerId, artistId], name: "unique_artist_follow")
+}
+
+model PlayHistory {
+  id         String   @id @default(cuid())
+  userId     String
+  trackId    String
+  playedAt   DateTime @default(now())
+  progressMs Int      @default(0)
+  durationMs Int
+  completed  Boolean  @default(false)
+  source     PlaySource?
+
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  track      Track    @relation(fields: [trackId], references: [id], onDelete: Cascade)
+
+  @@index([userId, playedAt])
+}
+
+enum PlaySource {
+  PLAYLIST
+  ALBUM
+  ARTIST
+  SEARCH
+  LIBRARY
+  RADIO
+  RECOMMENDATION
+}
+
+model Download {
+  id           String   @id @default(cuid())
+  userId       String
+  trackId      String
+  fileSize     Int
+  localPath    String?
+  quality      AudioQuality @default(STANDARD)
+  downloadedAt DateTime @default(now())
+  expiresAt    DateTime?
+  sha256Hash   String?
+
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  track        Track    @relation(fields: [trackId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, trackId])
+}
+
+enum AudioQuality {
+  LOW
+  STANDARD
+  HIGH
+  LOSSLESS
+}
+
+// ============ INDEXES FOR PERFORMANCE ============
+
+model SearchIndex {
+  id        String   @id @default(cuid())
+  entityType SearchEntityType
+  entityId  String
+  title     String
+  subtitle  String?
+  coverUrl  String?
+  popularity Int    @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([title])
+  @@index([entityType, popularity(sort: Desc)])
+}
+
+enum SearchEntityType {
+  TRACK
+  ALBUM
+  ARTIST
+  PLAYLIST
+  GENRE
+  USER
+}

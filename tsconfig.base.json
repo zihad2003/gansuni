@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["dom", "dom.iterable", "ES2022"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "forceConsistentCasingInFileNames": true,
+    "allowJs": false,
+    "checkJs": false,
+    "jsx": "preserve",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "baseUrl": ".",
+    "paths": {
+      "@gansuni/shared": ["packages/shared/src/index.ts"],
+      "@gansuni/shared/*": ["packages/shared/src/*"],
+      "@gansuni/db": ["packages/db/src/index.ts"],
+      "@gansuni/db/*": ["packages/db/src/*"],
+      "@gansuni/ui-web": ["packages/ui-web/src/index.ts"],
+      "@gansuni/ui-web/*": ["packages/ui-web/src/*"]
+    }
+  },
+  "include": [],
+  "exclude": ["node_modules"]
+}
