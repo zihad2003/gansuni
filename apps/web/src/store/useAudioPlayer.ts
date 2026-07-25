@@ -177,14 +177,21 @@ export const useAudioPlayer = create<PlayerSlice & InternalState>((set, get) => 
         await audio.play()
         set({ playbackState: 'playing', error: null })
       } catch (e: any) {
-        console.warn('Primary audio.play failed, attempting fallback stream:', e)
+        console.warn('Primary audio.play failed, resolving stream via API stream resolver:', e)
         try {
+          const res = await fetch(`/api/stream?q=${encodeURIComponent((track.artist?.name || '') + ' ' + track.title)}`)
+          if (res.ok) {
+            const streamData = await res.json()
+            if (streamData?.audioUrl) {
+              audio.src = streamData.audioUrl.replace(/^http:/i, 'https:')
+              await audio.play()
+              set({ playbackState: 'playing', error: null })
+              return
+            }
+          }
           const fallbackIndex = Math.abs(track.id.length) % FALLBACK_AUDIO_URLS.length
           let fallbackUrl = FALLBACK_AUDIO_URLS[fallbackIndex]!
-          if (fallbackUrl.startsWith('http:')) {
-            fallbackUrl = fallbackUrl.replace(/^http:/i, 'https:')
-          }
-          audio.src = fallbackUrl
+          audio.src = fallbackUrl.replace(/^http:/i, 'https:')
           await audio.play()
           set({ playbackState: 'playing', error: null })
         } catch (err2: any) {
