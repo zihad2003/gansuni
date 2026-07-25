@@ -204,8 +204,8 @@ export default function FullPlayerScreen() {
             >
               <Heart
                 size={24}
-                fill={liked ? '#1DB954' : 'transparent'}
-                color={liked ? '#1DB954' : themeColors.textSecondary}
+                fill={liked ? '#F59E0B' : 'transparent'}
+                color={liked ? '#F59E0B' : themeColors.textSecondary}
                 strokeWidth={2.2}
               />
             </Pressable>
@@ -273,8 +273,8 @@ export default function FullPlayerScreen() {
               style={({ pressed }) => [
                 styles.bigPlayBtn,
                 {
-                  backgroundColor: '#1DB954',
-                  shadowColor: '#1DB954',
+                  backgroundColor: '#F59E0B',
+                  shadowColor: '#F59E0B',
                   transform: [{ scale: pressed ? 0.93 : 1 }],
                 },
               ]}
@@ -362,7 +362,7 @@ export default function FullPlayerScreen() {
               ]}
             >
               {downloaded ? (
-                <DownloadCheck size={22} color="#1DB954" fill="#1DB95422" />
+                <DownloadCheck size={22} color="#F59E0B" fill="#F59E0B22" />
               ) : downloading ? (
                 <Text style={[styles.dlPct, { color: themeColors.textPrimary }]}>
                   {Math.round(downloadPct * 100)}%

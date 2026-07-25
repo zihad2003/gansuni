@@ -7,17 +7,23 @@ export async function GET(req: Request) {
     const query = searchParams.get('q') || searchParams.get('query') || 'Coke Studio Bangla'
     const limit = Math.min(25, parseInt(searchParams.get('limit') || '15', 10))
 
-    // 1. Try Primary Open Saavn API for Full-Length 320kbps Bengali MP3 Streams
-    try {
-      const saavnUrl = `https://saavn.dev/api/search/songs?query=${encodeURIComponent(query)}&limit=${limit}`
-      const saavnRes = await fetch(saavnUrl, {
-        headers: { 'Accept': 'application/json' },
-        next: { revalidate: 3600 },
-      })
+    // 1. Try Primary Open Saavn API mirrors for Full-Length 320kbps Bengali MP3 Streams
+    const saavnEndpoints = [
+      `https://saavn.dev/api/search/songs?query=${encodeURIComponent(query)}&limit=${limit}`,
+      `https://saavn.me/search/songs?query=${encodeURIComponent(query)}&limit=${limit}`,
+      `https://jiosaavn-api-private-us.vercel.app/search/songs?query=${encodeURIComponent(query)}&limit=${limit}`,
+    ]
 
-      if (saavnRes.ok) {
-        const saavnData = await saavnRes.json()
-        const results = saavnData?.data?.results || saavnData?.results || []
+    for (const saavnUrl of saavnEndpoints) {
+      try {
+        const saavnRes = await fetch(saavnUrl, {
+          headers: { 'Accept': 'application/json' },
+          next: { revalidate: 3600 },
+        })
+
+        if (saavnRes.ok) {
+          const saavnData = await saavnRes.json()
+          const results = saavnData?.data?.results || saavnData?.results || saavnData?.data || []
 
         if (Array.isArray(results) && results.length > 0) {
           const saavnTracks: Track[] = results.map((item: any) => {
@@ -107,10 +113,11 @@ export async function GET(req: Request) {
               tracks: saavnTracks,
             })
           }
+          }
         }
+      } catch (saavnErr) {
+        // Try next mirror endpoint
       }
-    } catch (saavnErr) {
-      console.warn('Saavn API fetch failed, falling back to iTunes API:', saavnErr)
     }
 
     // 2. Fallback to iTunes API

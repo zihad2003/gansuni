@@ -3,10 +3,10 @@ import { PrismaClient } from '@prisma/client'
 const prisma = new PrismaClient()
 
 async function seed() {
-  console.log('🌱 Starting database seed...')
+  console.log('🌱 Starting database seed for Gaansuni...')
 
   const genres = [
-    { name: 'Bangla Folk', slug: 'bangla-folk', color: '#1DB954' },
+    { name: 'Bangla Folk', slug: 'bangla-folk', color: '#F59E0B' },
     { name: 'Rabindra Sangeet', slug: 'rabindra-sangeet', color: '#E1306C' },
     { name: 'Nazrul Geeti', slug: 'nazrul-geeti', color: '#F59E0B' },
     { name: 'Adhunik', slug: 'adhunik', color: '#6366F1' },
@@ -26,28 +26,28 @@ async function seed() {
   }
 
   const demoArtist = await prisma.artist.upsert({
-    where: { slug: 'demo-artist' },
+    where: { slug: 'gaansuni-artist' },
     create: {
-      name: 'Demo Artist',
-      slug: 'demo-artist',
-      bio: 'A talented Bengali artist bringing soulful melodies to life.',
+      name: 'Gaansuni Master Artist',
+      slug: 'gaansuni-artist',
+      bio: 'Iconic Bengali artist bringing authentic acoustic melodies to Gaansuni.',
       verified: true,
-      monthlyListeners: 125000,
+      monthlyListeners: 850000,
     },
     update: {
-      monthlyListeners: 125000,
+      monthlyListeners: 850000,
     },
   })
   console.log(`  ✅ Artist: ${demoArtist.name}`)
 
   const demoAlbum = await prisma.album.upsert({
-    where: { slug: 'demo-album' },
+    where: { slug: 'gaansuni-classics' },
     create: {
-      title: 'Demo Album',
-      slug: 'demo-album',
+      title: 'Gaansuni Master Classics',
+      slug: 'gaansuni-classics',
       artistId: demoArtist.id,
-      coverArtUrl: 'https://picsum.photos/seed/gansuni-album/600/600',
-      releaseDate: new Date('2024-01-15'),
+      coverArtUrl: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=600&auto=format&fit=crop&q=80',
+      releaseDate: new Date('2025-01-01'),
       totalTracks: 3,
       durationMs: 720000,
       albumType: 'ALBUM',
@@ -63,7 +63,7 @@ async function seed() {
       durationMs: 240000,
       trackNumber: 1,
       explicit: false,
-      audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
+      audioUrl: 'https://raw.githubusercontent.com/mdn/webaudio-examples/main/audio-analyser/vibes.mp3',
     },
     {
       title: 'Mon Re Krishi Kaj Jano Na',
@@ -71,7 +71,7 @@ async function seed() {
       durationMs: 240000,
       trackNumber: 2,
       explicit: false,
-      audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
+      audioUrl: 'https://commondatastorage.googleapis.com/codeskulptor-demos/DinoJazz.mp3',
     },
     {
       title: 'Ogo Nodi Opono Dheu',
@@ -79,7 +79,7 @@ async function seed() {
       durationMs: 240000,
       trackNumber: 3,
       explicit: false,
-      audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3',
+      audioUrl: 'https://raw.githubusercontent.com/rafaelreis-hotmart/Audio-Sample-files/main/sample.mp3',
     },
   ]
 
@@ -91,7 +91,9 @@ async function seed() {
         artistId: demoArtist.id,
         albumId: demoAlbum.id,
       },
-      update: {},
+      update: {
+        audioUrl: track.audioUrl,
+      },
     })
     console.log(`  ✅ Track: ${track.title}`)
   }
