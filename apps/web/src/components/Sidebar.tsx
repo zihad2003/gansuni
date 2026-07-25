@@ -12,6 +12,8 @@ import { AppDownloadModal } from './AppDownloadModal'
 export function Sidebar(): ReactNode {
   const pathname = usePathname()
   const likedTrackIds = useAudioPlayer((s) => s.likedTrackIds)
+  const playedHistory = useAudioPlayer((s) => s.playedHistory)
+  const play = useAudioPlayer((s) => s.play)
   const [isDownloadOpen, setIsDownloadOpen] = useState(false)
 
   const isNavActive = (href: string) => {
@@ -56,9 +58,6 @@ export function Sidebar(): ReactNode {
               <Library size={18} />
               <span>Your Library</span>
             </Link>
-            <button className="p-1.5 rounded-lg hover:bg-white/10 text-white/60 hover:text-white transition-colors" aria-label="Add playlist">
-              <Plus size={16} />
-            </button>
           </div>
 
           <Link
@@ -76,25 +75,26 @@ export function Sidebar(): ReactNode {
             </div>
           </Link>
 
-          <div className="space-y-1">
-            {FEATURED_PLAYLISTS.map((p) => (
-              <Link
-                key={p.id}
-                href={`/playlist/${p.id}`}
-                className="w-full flex items-center gap-3 p-2 rounded-xl hover:bg-white/10 transition-all group text-left"
-              >
-                <div className="relative w-10 h-10 rounded-md overflow-hidden flex-shrink-0">
-                  <Image src={p.coverArtUrl || ''} alt={p.name} fill sizes="40px" className="object-cover" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium truncate" style={{ color: 'var(--gs-text-primary)' }}>{p.name}</div>
-                  <div className="text-[11px] truncate" style={{ color: 'var(--gs-text-muted)' }}>
-                    Playlist
+          {playedHistory.length > 0 && (
+            <div className="space-y-1">
+              <div className="text-[11px] font-bold uppercase tracking-wider text-white/40 px-2 py-1">Recently Played</div>
+              {playedHistory.slice(0, 5).map((t) => (
+                <div
+                  key={t.id}
+                  onClick={() => play(t as any, playedHistory.map((tr) => ({ trackId: tr.id, track: tr as any })), 0)}
+                  className="w-full flex items-center gap-3 p-2 rounded-xl hover:bg-white/10 transition-all group text-left cursor-pointer"
+                >
+                  <div className="relative w-9 h-9 rounded-md overflow-hidden flex-shrink-0">
+                    <Image src={t.album?.coverArtUrl || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=600&auto=format&fit=crop&q=80'} alt={t.title} fill sizes="36px" className="object-cover" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs font-semibold truncate text-white">{t.title}</div>
+                    <div className="text-[10px] truncate text-white/50">{t.artist?.name}</div>
                   </div>
                 </div>
-              </Link>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </aside>
 

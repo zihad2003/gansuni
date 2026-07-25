@@ -14,7 +14,12 @@ export default function AlbumDetailClient(): ReactNode {
   const params = useParams()
   const albumId = params?.id as string
 
-  const album = EXPANDED_ALBUMS.find((a) => a.id === albumId) || EXPANDED_ALBUMS[0]!
+  const album = EXPANDED_ALBUMS.find((a) => a.id === albumId) || {
+    id: albumId || 'default',
+    title: 'Album Details',
+    coverArtUrl: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=600&auto=format&fit=crop&q=80',
+    totalTracks: 0,
+  }
 
   const play = useAudioPlayer((s) => s.play)
   const currentTrackId = useAudioPlayer((s) => s.currentTrack?.id)

@@ -3,7 +3,8 @@ import { EXPANDED_ARTISTS } from '@gansuni/shared'
 import ArtistDetailClient from './ArtistDetailClient'
 
 export function generateStaticParams() {
-  return EXPANDED_ARTISTS.map((a) => ({ id: a.id }))
+  const params = EXPANDED_ARTISTS.map((a) => ({ id: a.id }))
+  return params.length > 0 ? params : [{ id: 'default' }]
 }
 
 export default function ArtistPage(): ReactNode {

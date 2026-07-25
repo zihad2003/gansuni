@@ -14,7 +14,12 @@ export default function PlaylistDetailClient(): ReactNode {
   const params = useParams()
   const playlistId = params?.id as string
 
-  const playlist = FEATURED_PLAYLISTS.find((p) => p.id === playlistId) || FEATURED_PLAYLISTS[0]!
+  const playlist = FEATURED_PLAYLISTS.find((p) => p.id === playlistId) || {
+    id: playlistId || 'default',
+    name: 'Playlist',
+    description: 'Custom music playlist',
+    coverArtUrl: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=600&auto=format&fit=crop&q=80',
+  }
 
   const play = useAudioPlayer((s) => s.play)
   const currentTrackId = useAudioPlayer((s) => s.currentTrack?.id)

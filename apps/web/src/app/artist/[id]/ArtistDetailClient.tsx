@@ -14,7 +14,13 @@ export default function ArtistDetailClient(): ReactNode {
   const params = useParams()
   const artistId = params?.id as string
 
-  const artist = EXPANDED_ARTISTS.find((a) => a.id === artistId) || EXPANDED_ARTISTS[0]!
+  const artist = EXPANDED_ARTISTS.find((a) => a.id === artistId) || {
+    id: artistId || 'default',
+    name: 'Artist Profile',
+    avatarUrl: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=600&auto=format&fit=crop&q=80',
+    monthlyListeners: 0,
+    bio: 'Music artist profile',
+  }
 
   const play = useAudioPlayer((s) => s.play)
   const currentTrackId = useAudioPlayer((s) => s.currentTrack?.id)

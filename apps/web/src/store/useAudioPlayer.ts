@@ -24,7 +24,9 @@ const FALLBACK_AUDIO_URLS = [
 
 interface InternalState {
   likedTrackIds: string[]
-  toggleLikeTrack: (trackId: string) => void
+  likedTracks: Track[]
+  playedHistory: Track[]
+  toggleLikeTrack: (trackObj: Track | string) => void
   isLiked: (trackId: string) => boolean
   _audioEl: HTMLAudioElement | null
   _boundEvents: boolean
@@ -36,14 +38,34 @@ interface InternalState {
 
 export const useAudioPlayer = create<PlayerSlice & InternalState>((set, get) => ({
   ...DEFAULT_PLAYER_STATE,
-  likedTrackIds: ['t12', 't13', 't14', 't15', 't16', 't17', 't18'],
-  toggleLikeTrack: (trackId: string) => {
+  likedTrackIds: [],
+  likedTracks: [],
+  playedHistory: [],
+  toggleLikeTrack: (trackObj: Track | string) => {
     set((s) => {
-      const exists = s.likedTrackIds.includes(trackId)
-      const next = exists
-        ? s.likedTrackIds.filter((id) => id !== trackId)
-        : [...s.likedTrackIds, trackId]
-      return { likedTrackIds: next }
+      const targetTrack: Track | undefined =
+        typeof trackObj === 'string'
+          ? (s.currentTrack?.id === trackObj
+              ? s.currentTrack
+              : s.playedHistory.find((t) => t.id === trackObj) || s.queue.find((q) => q.trackId === trackObj)?.track)
+          : trackObj
+
+      const targetId = typeof trackObj === 'string' ? trackObj : trackObj?.id
+
+      if (!targetId) return s
+
+      const exists = s.likedTrackIds.includes(targetId)
+      const nextIds = exists
+        ? s.likedTrackIds.filter((id) => id !== targetId)
+        : [...s.likedTrackIds, targetId]
+
+      const nextTracks = exists
+        ? s.likedTracks.filter((t) => t.id !== targetId)
+        : targetTrack
+        ? [targetTrack, ...s.likedTracks.filter((t) => t.id !== targetId)]
+        : s.likedTracks
+
+      return { likedTrackIds: nextIds, likedTracks: nextTracks }
     })
   },
   isLiked: (trackId: string) => get().likedTrackIds.includes(trackId),
@@ -153,7 +175,7 @@ export const useAudioPlayer = create<PlayerSlice & InternalState>((set, get) => 
         : []
       const shuffleIndices = state.shuffle ? [resolvedIdx, ...shuffled] : []
 
-      set({
+      set((s) => ({
         queue: finalQueue,
         currentIndex: resolvedIdx,
         currentTrack: track,
@@ -162,7 +184,8 @@ export const useAudioPlayer = create<PlayerSlice & InternalState>((set, get) => 
         duration: track.durationMs || 180000,
         _shuffleIndices: shuffleIndices,
         _shuffleIdx: 0,
-      })
+        playedHistory: [track, ...s.playedHistory.filter((t) => t.id !== track.id)].slice(0, 50),
+      }))
 
       let targetUrl = track.audioUrl || FALLBACK_AUDIO_URLS[0]!
       if (targetUrl.startsWith('http:')) {

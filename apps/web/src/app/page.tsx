@@ -6,12 +6,6 @@ import Link from 'next/link'
 import { Play, Heart, Clock, Sparkles, Music2, Radio, Headphones, Download, ChevronRight, UploadCloud } from 'lucide-react'
 import { useAudioPlayer } from '@/store/useAudioPlayer'
 import { formatDuration } from '@gansuni/shared'
-import {
-  EXPANDED_TRACKS,
-  NEW_RELEASES,
-  POPULAR_INTERNET_TRACKS,
-  FEATURED_PLAYLISTS,
-} from '@gansuni/shared'
 import { motion } from 'framer-motion'
 import { Sidebar } from '@/components/Sidebar'
 import { HeaderNav } from '@/components/HeaderNav'
@@ -24,6 +18,7 @@ export default function HomePage(): ReactNode {
   const currentTrackId = useAudioPlayer((s) => s.currentTrack?.id)
   const playbackState = useAudioPlayer((s) => s.playbackState)
   const likedTrackIds = useAudioPlayer((s) => s.likedTrackIds)
+  const playedHistory = useAudioPlayer((s) => s.playedHistory)
   const toggleLikeTrack = useAudioPlayer((s) => s.toggleLikeTrack)
 
   useEffect(() => {
@@ -44,7 +39,7 @@ export default function HomePage(): ReactNode {
       .catch(() => {})
   }, [])
 
-  const allAvailableTracks = [...userUploadedTracks, ...liveTracks]
+  const allAvailableTracks = [...userUploadedTracks, ...liveTracks, ...playedHistory]
 
   const onPlayTrack = (track: any, trackList: any[]) => {
     const idx = trackList.findIndex((t) => t.id === track.id)
@@ -53,6 +48,7 @@ export default function HomePage(): ReactNode {
   }
 
   const onPlayAll = () => {
+    if (allAvailableTracks.length === 0) return
     const first = allAvailableTracks[0]!
     play(first as any, allAvailableTracks.map((t) => ({ trackId: t.id, track: t as any })), 0)
   }
@@ -90,7 +86,7 @@ export default function HomePage(): ReactNode {
                 <div className="relative">
                   <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold bg-white/15 border border-white/20 text-white">
                     <Sparkles size={12} style={{ color: '#F59E0B' }} />
-                    NEW • 25+ High Quality Bengali Songs Added
+                    High Quality Music Streaming
                   </span>
 
                   <h1 className="mt-4 text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight leading-[1.1] text-balance text-white">
@@ -101,12 +97,12 @@ export default function HomePage(): ReactNode {
                       WebkitBackgroundClip: 'text',
                       WebkitTextFillColor: 'transparent',
                     }}>
-                      listen to authentic music
+                      authentic music streaming
                     </span>
                   </h1>
 
                   <p className="mt-4 max-w-2xl text-sm sm:text-base leading-relaxed text-white/80">
-                    Stream new releases, saved favorites, and internet viral hits like <i>Jhumka</i>, <i>Deora</i>, <i>Shada Shada Kala Kala</i>, <i>Boshonto Eshe Geche</i>, and Tagore timeless classics.
+                    Discover and stream high fidelity music, search live tracks, and save your favorite songs to your personal library.
                   </p>
 
                   <div className="mt-7 flex flex-wrap items-center gap-3">
@@ -122,14 +118,53 @@ export default function HomePage(): ReactNode {
                       <ChevronRight size={16} />
                     </Link>
                   </div>
-
-                  <div className="mt-8 grid grid-cols-3 max-w-lg gap-4">
-                    <QuickStat label="Tracks" value="25+ Hits" />
-                    <QuickStat label="Artists" value="7 Icons" />
-                    <QuickStat label="Quality" value="Lossless" />
-                  </div>
                 </div>
               </motion.section>
+
+              {/* RECENTLY PLAYED SECTION */}
+              {playedHistory.length > 0 && (
+                <section>
+                  <SectionHeader
+                    title="Recently Played"
+                    action={<Link href="/library" className="text-xs sm:text-sm font-semibold text-amber-400 hover:underline">View all in library</Link>}
+                  />
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 sm:gap-4">
+                    {playedHistory.slice(0, 6).map((t) => {
+                      const playing = isCurrentPlaying(t.id)
+                      const liked = likedTrackIds.includes(t.id)
+                      return (
+                        <div
+                          key={t.id}
+                          onClick={() => onPlayTrack(t, playedHistory)}
+                          className="group relative p-3 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all cursor-pointer flex flex-col justify-between"
+                        >
+                          <div className="relative aspect-square rounded-xl overflow-hidden mb-2 shadow-lg">
+                            <Image src={t.album?.coverArtUrl || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=600&auto=format&fit=crop&q=80'} alt={t.title} fill sizes="160px" className="object-cover transition-transform group-hover:scale-105" />
+                            <div className={`absolute inset-0 bg-black/40 flex items-center justify-center transition-opacity ${playing ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                              <div className="w-10 h-10 rounded-full bg-[#F59E0B] text-black flex items-center justify-center shadow-lg">
+                                {playing ? <EqualizerAnim /> : <Play size={18} fill="#000" strokeWidth={0} className="ml-0.5" />}
+                              </div>
+                            </div>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                toggleLikeTrack(t as any)
+                              }}
+                              className="absolute top-2 right-2 p-1.5 rounded-full bg-black/50 text-white/80 hover:text-[#F59E0B] transition-colors"
+                            >
+                              <Heart size={14} fill={liked ? '#F59E0B' : 'none'} color={liked ? '#F59E0B' : 'currentColor'} />
+                            </button>
+                          </div>
+                          <div>
+                            <div className="text-sm font-bold truncate text-white">{t.title}</div>
+                            <div className="text-xs text-white/60 truncate mt-0.5">{t.artist?.name}</div>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </section>
+              )}
 
               {/* USER UPLOADED SONGS SECTION */}
               {userUploadedTracks.length > 0 && (
@@ -141,7 +176,6 @@ export default function HomePage(): ReactNode {
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 sm:gap-4">
                     {userUploadedTracks.map((t) => {
                       const playing = isCurrentPlaying(t.id)
-                      const liked = likedTrackIds.includes(t.id)
                       return (
                         <div
                           key={t.id}
@@ -167,128 +201,67 @@ export default function HomePage(): ReactNode {
                 </section>
               )}
 
-              {/* NEW RELEASES SECTION */}
-              <section>
-                <SectionHeader title="New Releases" action={<Link href="/browse" className="text-xs sm:text-sm font-semibold text-amber-400 hover:underline">Explore all</Link>} />
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 sm:gap-4">
-                  {NEW_RELEASES.map((t) => {
-                    const playing = isCurrentPlaying(t.id)
-                    const liked = likedTrackIds.includes(t.id)
-                    return (
-                      <div
-                        key={t.id}
-                        onClick={() => onPlayTrack(t, NEW_RELEASES)}
-                        className="group relative p-3 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all cursor-pointer flex flex-col justify-between"
-                      >
-                        <div className="relative aspect-square rounded-xl overflow-hidden mb-2 shadow-lg">
-                          <Image src={t.album?.coverArtUrl || ''} alt={t.title} fill sizes="160px" className="object-cover transition-transform group-hover:scale-105" />
-                          <div className={`absolute inset-0 bg-black/40 flex items-center justify-center transition-opacity ${playing ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
-                            <div className="w-10 h-10 rounded-full bg-[#F59E0B] text-black flex items-center justify-center shadow-lg">
-                              {playing ? <EqualizerAnim /> : <Play size={18} fill="#000" strokeWidth={0} className="ml-0.5" />}
-                            </div>
-                          </div>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              toggleLikeTrack(t.id)
-                            }}
-                            className="absolute top-2 right-2 p-1.5 rounded-full bg-black/50 text-white/80 hover:text-[#F59E0B] transition-colors"
+              {/* TRENDING & POPULAR SONGS */}
+              {liveTracks.length > 0 && (
+                <section>
+                  <SectionHeader title="Trending & Popular Songs" />
+                  <div className="glass-card-strong overflow-hidden rounded-2xl">
+                    <div className="divide-y divide-white/5">
+                      {liveTracks.map((t, idx) => {
+                        const playing = isCurrentPlaying(t.id)
+                        const active = isCurrentTrack(t.id)
+                        const liked = likedTrackIds.includes(t.id)
+                        return (
+                          <div
+                            key={t.id}
+                            onClick={() => onPlayTrack(t, liveTracks)}
+                            className="group grid grid-cols-[40px_1fr_minmax(80px,auto)] sm:grid-cols-[32px_1fr_1fr_80px_48px] gap-3 sm:gap-4 px-4 sm:px-5 py-3 items-center hover:bg-white/5 cursor-pointer transition-colors"
                           >
-                            <Heart size={14} fill={liked ? '#F59E0B' : 'none'} color={liked ? '#F59E0B' : 'currentColor'} />
-                          </button>
-                        </div>
-                        <div>
-                          <div className="text-sm font-bold truncate text-white">{t.title}</div>
-                          <div className="text-xs text-white/60 truncate mt-0.5">{t.artist?.name}</div>
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              </section>
-
-              {/* MOST POPULAR ON INTERNET */}
-              <section>
-                <SectionHeader title="Most Popular Internet Hits" />
-                <div className="glass-card-strong overflow-hidden rounded-2xl">
-                  <div className="divide-y divide-white/5">
-                    {POPULAR_INTERNET_TRACKS.map((t, idx) => {
-                      const playing = isCurrentPlaying(t.id)
-                      const active = isCurrentTrack(t.id)
-                      const liked = likedTrackIds.includes(t.id)
-                      return (
-                        <div
-                          key={t.id}
-                          onClick={() => onPlayTrack(t, POPULAR_INTERNET_TRACKS)}
-                          className="group grid grid-cols-[40px_1fr_minmax(80px,auto)] sm:grid-cols-[32px_1fr_1fr_80px_48px] gap-3 sm:gap-4 px-4 sm:px-5 py-3 items-center hover:bg-white/5 cursor-pointer transition-colors"
-                        >
-                          <div className="flex items-center justify-center text-sm font-semibold" style={{ color: active ? '#F59E0B' : 'var(--gs-text-muted)' }}>
-                            {playing ? <EqualizerAnim /> : (
-                              <>
-                                <span className="group-hover:hidden">{idx + 1}</span>
-                                <Play size={14} fill={active ? '#F59E0B' : 'currentColor'} strokeWidth={0} className="hidden group-hover:block" />
-                              </>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-3 min-w-0">
-                            <div className="relative w-11 h-11 rounded-lg overflow-hidden flex-shrink-0">
-                              <Image src={t.album?.coverArtUrl || ''} alt={t.title} fill sizes="44px" className="object-cover" />
+                            <div className="flex items-center justify-center text-sm font-semibold" style={{ color: active ? '#F59E0B' : 'var(--gs-text-muted)' }}>
+                              {playing ? <EqualizerAnim /> : (
+                                <>
+                                  <span className="group-hover:hidden">{idx + 1}</span>
+                                  <Play size={14} fill={active ? '#F59E0B' : 'currentColor'} strokeWidth={0} className="hidden group-hover:block" />
+                                </>
+                              )}
                             </div>
-                            <div className="min-w-0">
-                              <div className="text-sm sm:text-[15px] font-semibold truncate" style={{ color: active ? '#F59E0B' : 'var(--gs-text-primary)' }}>
-                                {t.title}
+                            <div className="flex items-center gap-3 min-w-0">
+                              <div className="relative w-11 h-11 rounded-lg overflow-hidden flex-shrink-0">
+                                <Image src={t.album?.coverArtUrl || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=600&auto=format&fit=crop&q=80'} alt={t.title} fill sizes="44px" className="object-cover" />
                               </div>
-                              <div className="text-xs truncate text-white/60">
-                                {t.artist?.name}
+                              <div className="min-w-0">
+                                <div className="text-sm sm:text-[15px] font-semibold truncate" style={{ color: active ? '#F59E0B' : 'var(--gs-text-primary)' }}>
+                                  {t.title}
+                                </div>
+                                <div className="text-xs truncate text-white/60">
+                                  {t.artist?.name}
+                                </div>
                               </div>
                             </div>
+                            <div className="hidden sm:block text-xs truncate text-white/60">
+                              {t.album?.title}
+                            </div>
+                            <div className="flex items-center justify-end text-xs text-white/50 font-medium">
+                              {formatDuration(t.durationMs || 180000)}
+                            </div>
+                            <div className="hidden sm:flex items-center justify-end opacity-0 group-hover:opacity-100 transition-opacity">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  toggleLikeTrack(t as any)
+                                }}
+                                className="p-2 rounded-full hover:bg-white/10 text-white/60 hover:text-[#F59E0B] transition-colors"
+                              >
+                                <Heart size={16} fill={liked ? '#F59E0B' : 'none'} color={liked ? '#F59E0B' : 'currentColor'} />
+                              </button>
+                            </div>
                           </div>
-                          <div className="hidden sm:block text-xs truncate text-white/60">
-                            {t.album?.title}
-                          </div>
-                          <div className="flex items-center justify-end text-xs text-white/50 font-medium">
-                            {formatDuration(t.durationMs)}
-                          </div>
-                          <div className="hidden sm:flex items-center justify-end opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                toggleLikeTrack(t.id)
-                              }}
-                              className="p-2 rounded-full hover:bg-white/10 text-white/60 hover:text-[#F59E0B] transition-colors"
-                            >
-                              <Heart size={16} fill={liked ? '#F59E0B' : 'none'} color={liked ? '#F59E0B' : 'currentColor'} />
-                            </button>
-                          </div>
-                        </div>
-                      )
-                    })}
+                        )
+                      })}
+                    </div>
                   </div>
-                </div>
-              </section>
-
-              {/* FEATURED PLAYLISTS */}
-              <section>
-                <SectionHeader title="Featured Playlists" />
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {FEATURED_PLAYLISTS.map((pl) => (
-                    <Link
-                      key={pl.id}
-                      href={`/playlist/${pl.id}`}
-                      className="group relative p-4 rounded-2xl bg-white/5 border border-white/10 hover:scale-[1.02] transition-all cursor-pointer"
-                    >
-                      <div className="relative aspect-square rounded-xl overflow-hidden shadow-xl mb-3">
-                        <Image src={pl.coverArtUrl || ''} alt={pl.name} fill sizes="250px" className="object-cover group-hover:scale-105 transition-transform duration-500" />
-                        <div className="absolute bottom-3 right-3 w-12 h-12 rounded-full bg-[#F59E0B] text-black flex items-center justify-center shadow-xl opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Play size={20} fill="#000" strokeWidth={0} className="ml-0.5" />
-                        </div>
-                      </div>
-                      <h3 className="font-bold truncate text-base text-white">{pl.name}</h3>
-                      <p className="mt-1 text-xs text-white/60 line-clamp-2">{pl.description}</p>
-                    </Link>
-                  ))}
-                </div>
-              </section>
+                </section>
+              )}
 
               {/* FOOTER */}
               <footer className="pt-8 pb-4 border-t border-white/10">
@@ -315,15 +288,6 @@ function SectionHeader({ title, action }: { title: string; action?: ReactNode })
         {title}
       </h2>
       {action}
-    </div>
-  )
-}
-
-function QuickStat({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <div className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">{value}</div>
-      <div className="text-[11px] font-medium uppercase tracking-wider text-white/50 mt-0.5">{label}</div>
     </div>
   )
 }
