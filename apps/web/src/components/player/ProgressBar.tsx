@@ -116,7 +116,7 @@ export function ProgressBar({
             animate={{
               width: `${activePct * 100}%`,
             }}
-            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+            transition={{ duration: seeking ? 0 : 0.12, ease: 'linear' }}
           >
             {/* GLOWING SHIMMER LIGHT ON PLAY LINE */}
             <motion.div
@@ -139,7 +139,7 @@ export function ProgressBar({
               ? '0 0 16px rgba(245, 158, 11, 0.9), 0 0 8px rgba(249, 115, 22, 0.8)'
               : '0 0 6px rgba(245, 158, 11, 0.4)',
           }}
-          transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+          transition={{ duration: seeking ? 0 : 0.12, ease: 'linear' }}
         >
           <div className="w-full h-full rounded-full bg-white border-2 border-[#F59E0B]" />
         </motion.div>
