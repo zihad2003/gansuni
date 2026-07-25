@@ -18,6 +18,8 @@ import { HeaderNav } from '@/components/HeaderNav'
 
 export default function HomePage(): ReactNode {
   const [userUploadedTracks, setUserUploadedTracks] = useState<any[]>([])
+  const [liveTracks, setLiveTracks] = useState<any[]>([])
+
   const play = useAudioPlayer((s) => s.play)
   const currentTrackId = useAudioPlayer((s) => s.currentTrack?.id)
   const playbackState = useAudioPlayer((s) => s.playbackState)
@@ -31,9 +33,18 @@ export default function HomePage(): ReactNode {
         if (data.userTracks) setUserUploadedTracks(data.userTracks)
       })
       .catch(() => {})
+
+    fetch('/api/live-search?q=Coke%20Studio%20Bangla&limit=20')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.tracks && Array.isArray(data.tracks) && data.tracks.length > 0) {
+          setLiveTracks(data.tracks)
+        }
+      })
+      .catch(() => {})
   }, [])
 
-  const allAvailableTracks = [...userUploadedTracks, ...EXPANDED_TRACKS]
+  const allAvailableTracks = [...userUploadedTracks, ...liveTracks]
 
   const onPlayTrack = (track: any, trackList: any[]) => {
     const idx = trackList.findIndex((t) => t.id === track.id)
