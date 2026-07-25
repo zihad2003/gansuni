@@ -28,8 +28,8 @@ export default function BrowsePage(): ReactNode {
 
             <div className="space-y-8">
               {/* HERO BANNER */}
-              <div className="relative overflow-hidden rounded-3xl p-6 sm:p-8 bg-gradient-to-r from-emerald-900/50 via-teal-900/40 to-blue-900/50 border border-white/10 backdrop-blur-xl">
-                <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-emerald-400 border border-white/15 text-xs font-bold w-fit mb-3">
+              <div className="relative overflow-hidden rounded-3xl p-6 sm:p-8 bg-gradient-to-r from-amber-900/50 via-orange-900/40 to-blue-900/50 border border-white/10 backdrop-blur-xl">
+                <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-amber-400 border border-white/15 text-xs font-bold w-fit mb-3">
                   <Compass size={14} />
                   <span>Browse All Categories</span>
                 </div>
@@ -48,7 +48,7 @@ export default function BrowsePage(): ReactNode {
                       key={g.id}
                       className="group relative p-5 rounded-2xl overflow-hidden cursor-pointer shadow-lg border border-white/10 transition-all hover:scale-[1.03]"
                       style={{
-                        background: `linear-gradient(135deg, ${g.color || '#1DB954'}88, rgba(0,0,0,0.8))`,
+                        background: `linear-gradient(135deg, ${g.color || '#F59E0B'}88, rgba(0,0,0,0.8))`,
                       }}
                     >
                       <h3 className="text-lg font-bold text-white relative z-10">{g.name}</h3>
@@ -61,7 +61,7 @@ export default function BrowsePage(): ReactNode {
 
               {/* TOP ARTISTS */}
               <section>
-                <h2 className="text-xl font-extrabold text-white mb-4">শীর্ষ জনপ্রিয় শিল্পী (Top Artists)</h2>
+                <h2 className="text-xl font-extrabold text-white mb-4">শীর্ষ জনপ্রিয় শিল্পী (Top Artists)</h2>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
                   {EXPANDED_ARTISTS.map((a) => (
                     <Link
@@ -83,10 +83,10 @@ export default function BrowsePage(): ReactNode {
               <section>
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-xl font-extrabold text-white flex items-center gap-2">
-                    <Sparkles size={20} className="text-[#1DB954]" />
+                    <Sparkles size={20} className="text-[#F59E0B]" />
                     <span>নতুন রিলিজ (New Releases)</span>
                   </h2>
-                  <button onClick={onPlayAllNew} className="text-xs font-semibold text-[#1DB954] hover:underline">
+                  <button onClick={onPlayAllNew} className="text-xs font-semibold text-[#F59E0B] hover:underline">
                     Play all new
                   </button>
                 </div>
@@ -100,7 +100,7 @@ export default function BrowsePage(): ReactNode {
                       <div className="relative aspect-square rounded-xl overflow-hidden mb-2 shadow-md">
                         <Image src={t.album?.coverArtUrl || ''} alt={t.title} fill sizes="160px" className="object-cover group-hover:scale-105 transition-transform" />
                         <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                          <div className="w-9 h-9 rounded-full bg-[#1DB954] text-black flex items-center justify-center">
+                          <div className="w-9 h-9 rounded-full bg-[#F59E0B] text-black flex items-center justify-center">
                             <Play size={16} fill="#000" strokeWidth={0} className="ml-0.5" />
                           </div>
                         </div>

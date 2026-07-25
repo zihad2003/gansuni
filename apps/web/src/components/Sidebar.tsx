@@ -20,12 +20,12 @@ export function Sidebar(): ReactNode {
   return (
     <aside className="hidden lg:flex flex-col gap-3 h-fit sticky top-6">
       <div className="glass-card p-4 flex items-center gap-3">
-        <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-gradient-to-tr from-[#1DB954] to-emerald-400 text-black shadow-lg">
+        <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-gradient-to-tr from-[#F59E0B] to-[#F97316] text-black shadow-lg">
           <Music2 size={20} strokeWidth={2.5} />
         </div>
         <div>
           <div className="font-extrabold text-base tracking-tight text-white">গানশুনি</div>
-          <div className="text-[10px] text-white/50 font-semibold tracking-wider uppercase">Gansuni Web</div>
+          <div className="text-[10px] text-white/50 font-semibold tracking-wider uppercase">Gaansuni Web</div>
         </div>
       </div>
 
@@ -94,7 +94,7 @@ function SideNavLink({ icon: Icon, label, href, active }: { icon: any; label: st
       className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all"
       style={{
         background: active ? 'rgba(255,255,255,0.12)' : 'transparent',
-        color: active ? '#1DB954' : 'var(--gs-text-secondary)',
+        color: active ? '#F59E0B' : 'var(--gs-text-secondary)',
       }}
     >
       <Icon size={20} />

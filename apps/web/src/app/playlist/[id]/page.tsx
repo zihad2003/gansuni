@@ -51,7 +51,7 @@ export default function PlaylistDetailPage(): ReactNode {
                   <h1 className="text-2xl sm:text-4xl font-extrabold text-white mt-1">{playlist.name}</h1>
                   <p className="text-xs sm:text-sm text-white/70 mt-2 leading-relaxed">{playlist.description}</p>
                   <div className="mt-4 flex items-center gap-3">
-                    <button onClick={onPlayAll} className="spotify-button flex items-center gap-2 font-bold px-6 py-2.5">
+                    <button onClick={onPlayAll} className="gs-button flex items-center gap-2 font-bold px-6 py-2.5">
                       <Play size={18} fill="#000" strokeWidth={0} />
                       Play All ({tracks.length})
                     </button>
@@ -72,7 +72,7 @@ export default function PlaylistDetailPage(): ReactNode {
                     >
                       <div className="flex items-center justify-center text-sm font-semibold text-white/50">
                         {playing ? (
-                          <span className="text-[#1DB954] font-bold">▶</span>
+                          <span className="text-[#F59E0B] font-bold">▶</span>
                         ) : (
                           <>
                             <span className="group-hover:hidden">{idx + 1}</span>
@@ -97,9 +97,9 @@ export default function PlaylistDetailPage(): ReactNode {
                             e.stopPropagation()
                             toggleLikeTrack(t.id)
                           }}
-                          className="p-1.5 rounded-full hover:bg-white/10 text-white/60 hover:text-[#1DB954] transition-colors"
+                          className="p-1.5 rounded-full hover:bg-white/10 text-white/60 hover:text-[#F59E0B] transition-colors"
                         >
-                          <Heart size={16} fill={liked ? '#1DB954' : 'none'} color={liked ? '#1DB954' : 'currentColor'} />
+                          <Heart size={16} fill={liked ? '#F59E0B' : 'none'} color={liked ? '#F59E0B' : 'currentColor'} />
                         </button>
                       </div>
                     </div>

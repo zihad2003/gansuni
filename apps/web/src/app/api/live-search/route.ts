@@ -7,7 +7,113 @@ export async function GET(req: Request) {
     const query = searchParams.get('q') || searchParams.get('query') || 'Coke Studio Bangla'
     const limit = Math.min(25, parseInt(searchParams.get('limit') || '15', 10))
 
-    // Query iTunes Open Music API for metadata & cover art
+    // 1. Try Primary Open Saavn API for Full-Length 320kbps Bengali MP3 Streams
+    try {
+      const saavnUrl = `https://saavn.dev/api/search/songs?query=${encodeURIComponent(query)}&limit=${limit}`
+      const saavnRes = await fetch(saavnUrl, {
+        headers: { 'Accept': 'application/json' },
+        next: { revalidate: 3600 },
+      })
+
+      if (saavnRes.ok) {
+        const saavnData = await saavnRes.json()
+        const results = saavnData?.data?.results || saavnData?.results || []
+
+        if (Array.isArray(results) && results.length > 0) {
+          const saavnTracks: Track[] = results.map((item: any) => {
+            const trackId = `saavn_${item.id}`
+            const title = item.name || item.title || 'Untitled Track'
+            const artistName = item.primaryArtists || item.artists?.primary?.[0]?.name || 'Bangla Artist'
+            const albumTitle = item.album?.name || item.album || 'Single'
+
+            // Extract best quality 500x500 artwork image
+            const images = item.image || []
+            const bestImage = Array.isArray(images)
+              ? (images.find((img: any) => img.quality === '500x500')?.link || images[images.length - 1]?.link || images[0]?.link || '')
+              : (typeof images === 'string' ? images : '')
+
+            // Extract best quality 320kbps / 160kbps MP3 audio stream URL
+            const downloadUrls = item.downloadUrl || item.media_url || []
+            let streamUrl = ''
+
+            if (Array.isArray(downloadUrls)) {
+              const bestQuality =
+                downloadUrls.find((d: any) => d.quality === '320kbps')?.url ||
+                downloadUrls.find((d: any) => d.quality === '320kbps')?.link ||
+                downloadUrls.find((d: any) => d.quality === '160kbps')?.url ||
+                downloadUrls.find((d: any) => d.quality === '160kbps')?.link ||
+                downloadUrls[downloadUrls.length - 1]?.url ||
+                downloadUrls[downloadUrls.length - 1]?.link ||
+                downloadUrls[0]?.url ||
+                downloadUrls[0]?.link ||
+                ''
+              streamUrl = bestQuality
+            } else if (typeof downloadUrls === 'string') {
+              streamUrl = downloadUrls
+            }
+            if (streamUrl) {
+              streamUrl = streamUrl.replace(/^http:/i, 'https:')
+            }
+
+            const durationSec = parseInt(item.duration || '210', 10)
+            const durationMs = durationSec > 0 ? durationSec * 1000 : 210000
+
+            return {
+              id: trackId,
+              title,
+              slug: title.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+              artistId: `artist_${item.id}`,
+              artist: {
+                id: `artist_${item.id}`,
+                name: artistName,
+                slug: artistName.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+                bio: `Official release by ${artistName}`,
+                avatarUrl: bestImage,
+                verified: true,
+                monthlyListeners: Math.floor(Math.random() * 500000) + 200000,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+              },
+              albumId: `album_${item.album?.id || item.id}`,
+              album: {
+                id: `album_${item.album?.id || item.id}`,
+                title: albumTitle,
+                slug: albumTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+                artistId: `artist_${item.id}`,
+                coverArtUrl: bestImage,
+                totalTracks: 1,
+                durationMs,
+                albumType: 'SINGLE',
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+              },
+              audioUrl: streamUrl,
+              durationMs,
+              trackNumber: 1,
+              discNumber: 1,
+              explicit: false,
+              playCount: Math.floor(Math.random() * 3000000) + 500000,
+              isPremium: false,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            }
+          }).filter((t: Track) => !!t.audioUrl)
+
+          if (saavnTracks.length > 0) {
+            return NextResponse.json({
+              query,
+              source: 'Saavn Open API (Full 320kbps MP3)',
+              count: saavnTracks.length,
+              tracks: saavnTracks,
+            })
+          }
+        }
+      }
+    } catch (saavnErr) {
+      console.warn('Saavn API fetch failed, falling back to iTunes API:', saavnErr)
+    }
+
+    // 2. Fallback to iTunes API
     const targetUrl = `https://itunes.apple.com/search?term=${encodeURIComponent(query)}&entity=song&limit=${limit}`
     const res = await fetch(targetUrl, {
       headers: {
@@ -24,23 +130,11 @@ export async function GET(req: Request) {
     const data = await res.json()
     const results = (data.results || []).filter((item: any) => item && item.previewUrl)
 
-    // Full audio fallback list for guaranteed complete 3-5 minute audio streaming
-    const fullAudioFallbacks = [
-      'https://upload.wikimedia.org/wikipedia/commons/2/2c/Amar_Sonar_Bangla_-_official_vocal_music_of_the_National_anthem_of_Bangladesh.ogg',
-      'https://upload.wikimedia.org/wikipedia/commons/8/87/Banglar-Mati-Banglar-Jol.ogg',
-      'https://upload.wikimedia.org/wikipedia/commons/e/e0/Jana_gana_mana_vocal.ogg',
-      'https://upload.wikimedia.org/wikipedia/commons/0/02/Pran_chai_chokkhu_na_chay_%28Rabindra_Sangeet%29_on_Piano_by_Paramanu_Sarkar.ogg',
-      'https://upload.wikimedia.org/wikipedia/commons/9/90/Jadio_sandhya_asicche_manda_manthare_by_Rabindranath_Tagore.ogg',
-    ]
-
-    const tracks: Track[] = results.map((item: any, idx: number) => {
+    const tracks: Track[] = results.map((item: any) => {
       const trackId = `itunes_${item.trackId}`
       const artistName = item.artistName || 'Unknown Artist'
       const albumTitle = item.collectionName || 'Single'
       const coverArtUrl = (item.artworkUrl100 || item.artworkUrl60 || '').replace('100x100bb', '600x600bb')
-      
-      // Use fallback full 3-5 minute audio or preview
-      const fullAudioUrl = fullAudioFallbacks[idx % fullAudioFallbacks.length] || item.previewUrl
 
       return {
         id: trackId,
@@ -72,7 +166,7 @@ export async function GET(req: Request) {
           createdAt: item.releaseDate || new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         },
-        audioUrl: fullAudioUrl,
+        audioUrl: (item.previewUrl || '').replace(/^http:/i, 'https:'),
         durationMs: item.trackTimeMillis || 240000,
         trackNumber: item.trackNumber || 1,
         discNumber: item.discNumber || 1,
@@ -86,6 +180,7 @@ export async function GET(req: Request) {
 
     return NextResponse.json({
       query,
+      source: 'iTunes API Preview Streams',
       count: tracks.length,
       tracks,
     })

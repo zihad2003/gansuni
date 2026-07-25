@@ -32,8 +32,8 @@ export default function MadeForYouPage(): ReactNode {
 
             <div className="space-y-8">
               {/* HERO BANNER */}
-              <div className="relative overflow-hidden rounded-3xl p-6 sm:p-8 bg-gradient-to-r from-purple-900/60 via-indigo-900/50 to-emerald-900/60 border border-white/10 backdrop-blur-xl">
-                <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-emerald-400 border border-white/15 text-xs font-bold w-fit mb-3">
+              <div className="relative overflow-hidden rounded-3xl p-6 sm:p-8 bg-gradient-to-r from-purple-900/60 via-indigo-900/50 to-amber-900/60 border border-white/10 backdrop-blur-xl">
+                <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-amber-400 border border-white/15 text-xs font-bold w-fit mb-3">
                   <Sparkles size={14} />
                   <span>AI Personalized Recommendations</span>
                 </div>
@@ -44,7 +44,7 @@ export default function MadeForYouPage(): ReactNode {
                 <div className="mt-5">
                   <button
                     onClick={onPlayAll}
-                    className="spotify-button flex items-center gap-2 font-bold px-6 py-2.5"
+                    className="gs-button flex items-center gap-2 font-bold px-6 py-2.5"
                   >
                     <Play size={18} fill="#000" strokeWidth={0} />
                     Play Your Mix
@@ -63,7 +63,7 @@ export default function MadeForYouPage(): ReactNode {
                     title="Daily Mix 1"
                     desc="Rabindranath Tagore, Sahana Bajpaie & Soft Acoustic Bengali Songs"
                     coverUrl="https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=600&auto=format&fit=crop&q=80"
-                    color="from-amber-600/40 to-emerald-900/40"
+                    color="from-amber-600/40 to-orange-900/40"
                     onPlay={onPlayAll}
                   />
                   <MixCard
@@ -86,7 +86,7 @@ export default function MadeForYouPage(): ReactNode {
               {/* FEATURED PLAYLISTS */}
               <section>
                 <h2 className="text-xl font-extrabold text-white mb-4 flex items-center gap-2">
-                  <Radio size={20} className="text-emerald-400" />
+                  <Radio size={20} className="text-amber-400" />
                   <span>Curated Bengali Playlists</span>
                 </h2>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -98,7 +98,7 @@ export default function MadeForYouPage(): ReactNode {
                     >
                       <div className="relative aspect-square rounded-xl overflow-hidden mb-3 shadow-lg">
                         <Image src={pl.coverArtUrl || ''} alt={pl.name} fill sizes="200px" className="object-cover group-hover:scale-105 transition-transform" />
-                        <div className="absolute bottom-2 right-2 w-10 h-10 rounded-full bg-[#1DB954] text-black flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="absolute bottom-2 right-2 w-10 h-10 rounded-full bg-[#F59E0B] text-black flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 transition-opacity">
                           <Play size={16} fill="#000" strokeWidth={0} />
                         </div>
                       </div>
@@ -125,7 +125,7 @@ function MixCard({ title, desc, coverUrl, color, onPlay }: { title: string; desc
         </div>
         <button
           onClick={onPlay}
-          className="w-12 h-12 rounded-full bg-[#1DB954] text-black flex items-center justify-center shadow-xl opacity-90 hover:opacity-100 transition-opacity"
+          className="w-12 h-12 rounded-full bg-[#F59E0B] text-black flex items-center justify-center shadow-xl opacity-90 hover:opacity-100 transition-opacity"
         >
           <Play size={20} fill="#000" strokeWidth={0} className="ml-0.5" />
         </button>

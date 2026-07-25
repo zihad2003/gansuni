@@ -100,10 +100,10 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps): ReactNode {
 
         {uploadedTrack ? (
           <div className="text-center py-6">
-            <div className="w-16 h-16 rounded-full bg-[#1DB954]/20 text-[#1DB954] border border-[#1DB954]/40 flex items-center justify-center mx-auto mb-4">
+            <div className="w-16 h-16 rounded-full bg-[#F59E0B]/20 text-[#F59E0B] border border-[#F59E0B]/40 flex items-center justify-center mx-auto mb-4">
               <Check size={32} />
             </div>
-            <h2 className="text-2xl font-black text-white">গান সফলভাবে আপলোড হয়েছে!</h2>
+            <h2 className="text-2xl font-black text-white">গান সফলভাবে আপলোড হয়েছে!</h2>
             <p className="text-sm text-white/70 mt-1">
               "{uploadedTrack.title}" by {uploadedTrack.artist?.name} is ready for playback.
             </p>
@@ -111,7 +111,7 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps): ReactNode {
             <div className="mt-6 flex justify-center gap-3">
               <button
                 onClick={handlePlayUploaded}
-                className="spotify-button flex items-center gap-2 font-bold px-6 py-2.5"
+                className="gs-button flex items-center gap-2 font-bold px-6 py-2.5"
               >
                 <Play size={18} fill="#000" strokeWidth={0} />
                 Play Now
@@ -135,11 +135,11 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps): ReactNode {
           <form onSubmit={handleUploadSubmit} className="space-y-5">
             <div>
               <h2 className="text-2xl font-black text-white flex items-center gap-2">
-                <UploadCloud size={24} className="text-[#1DB954]" />
+                <UploadCloud size={24} className="text-[#F59E0B]" />
                 <span>গান আপলোড করুন (Upload MP3)</span>
               </h2>
               <p className="text-xs text-white/60 mt-1">
-                Upload your custom MP3, WAV, M4A, or FLAC songs directly into your local Gansuni library.
+                Upload your custom MP3, WAV, M4A, or FLAC songs directly into your local Gaansuni library.
               </p>
             </div>
 
@@ -152,7 +152,7 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps): ReactNode {
             {/* AUDIO FILE DROPZONE */}
             <div
               onClick={() => audioInputRef.current?.click()}
-              className="border-2 border-dashed border-white/20 hover:border-[#1DB954] rounded-2xl p-6 text-center cursor-pointer transition-all bg-white/5 hover:bg-white/10"
+              className="border-2 border-dashed border-white/20 hover:border-[#F59E0B] rounded-2xl p-6 text-center cursor-pointer transition-all bg-white/5 hover:bg-white/10"
             >
               <input
                 ref={audioInputRef}
@@ -161,11 +161,11 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps): ReactNode {
                 className="hidden"
                 onChange={(e) => e.target.files?.[0] && handleAudioSelect(e.target.files[0])}
               />
-              <Music size={32} className="mx-auto text-[#1DB954] mb-2" />
+              <Music size={32} className="mx-auto text-[#F59E0B] mb-2" />
               {audioFile ? (
                 <div>
                   <span className="text-sm font-bold text-white">{audioFile.name}</span>
-                  <span className="text-xs text-emerald-400 block mt-0.5">
+                  <span className="text-xs text-amber-400 block mt-0.5">
                     {(audioFile.size / (1024 * 1024)).toFixed(2)} MB • Ready to upload
                   </span>
                 </div>
@@ -187,7 +187,7 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps): ReactNode {
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="e.g. Jhumka"
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-white/10 border border-white/15 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-[#1DB954] text-sm"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-white/10 border border-white/15 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-[#F59E0B] text-sm"
                 />
               </div>
 
@@ -199,7 +199,7 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps): ReactNode {
                   value={artist}
                   onChange={(e) => setArtist(e.target.value)}
                   placeholder="e.g. Muza / Shahi Chowdhury"
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-white/10 border border-white/15 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-[#1DB954] text-sm"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-white/10 border border-white/15 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-[#F59E0B] text-sm"
                 />
               </div>
 
@@ -210,7 +210,7 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps): ReactNode {
                   value={album}
                   onChange={(e) => setAlbum(e.target.value)}
                   placeholder="e.g. Single / Album Name"
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-white/10 border border-white/15 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-[#1DB954] text-sm"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-white/10 border border-white/15 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-[#F59E0B] text-sm"
                 />
               </div>
 
@@ -219,7 +219,7 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps): ReactNode {
                 <select
                   value={genre}
                   onChange={(e) => setGenre(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-white/10 border border-white/15 text-white focus:outline-none focus:ring-2 focus:ring-[#1DB954] text-sm"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-white/10 border border-white/15 text-white focus:outline-none focus:ring-2 focus:ring-[#F59E0B] text-sm"
                 >
                   <option value="Bangla Pop" className="bg-neutral-900 text-white">Bangla Pop</option>
                   <option value="Rabindra Sangeet" className="bg-neutral-900 text-white">Rabindra Sangeet</option>
@@ -265,7 +265,7 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps): ReactNode {
               <button
                 type="submit"
                 disabled={isUploading || !audioFile}
-                className="spotify-button flex items-center gap-2 font-bold px-6 py-2.5 disabled:opacity-50 text-xs"
+                className="gs-button flex items-center gap-2 font-bold px-6 py-2.5 disabled:opacity-50 text-xs"
               >
                 {isUploading ? <Loader2 size={16} className="animate-spin" /> : <UploadCloud size={16} />}
                 <span>{isUploading ? 'Uploading...' : 'Save & Upload'}</span>

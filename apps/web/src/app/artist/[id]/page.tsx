@@ -59,7 +59,7 @@ export default function ArtistDetailPage(): ReactNode {
                   <p className="text-xs text-white/60 mt-2 max-w-xl leading-relaxed">{artist.bio}</p>
 
                   <div className="mt-5 flex items-center justify-center sm:justify-start gap-3">
-                    <button onClick={onPlayAll} className="spotify-button flex items-center gap-2 font-bold px-6 py-2.5">
+                    <button onClick={onPlayAll} className="gs-button flex items-center gap-2 font-bold px-6 py-2.5">
                       <Play size={18} fill="#000" strokeWidth={0} />
                       Play Top Tracks
                     </button>
@@ -82,7 +82,7 @@ export default function ArtistDetailPage(): ReactNode {
                       >
                         <div className="flex items-center justify-center text-sm font-semibold text-white/50">
                           {playing ? (
-                            <span className="text-[#1DB954] font-bold">▶</span>
+                            <span className="text-[#F59E0B] font-bold">▶</span>
                           ) : (
                             <>
                               <span className="group-hover:hidden">{idx + 1}</span>
@@ -107,9 +107,9 @@ export default function ArtistDetailPage(): ReactNode {
                               e.stopPropagation()
                               toggleLikeTrack(t.id)
                             }}
-                            className="p-1.5 rounded-full hover:bg-white/10 text-white/60 hover:text-[#1DB954] transition-colors"
+                            className="p-1.5 rounded-full hover:bg-white/10 text-white/60 hover:text-[#F59E0B] transition-colors"
                           >
-                            <Heart size={16} fill={liked ? '#1DB954' : 'none'} color={liked ? '#1DB954' : 'currentColor'} />
+                            <Heart size={16} fill={liked ? '#F59E0B' : 'none'} color={liked ? '#F59E0B' : 'currentColor'} />
                           </button>
                         </div>
                       </div>

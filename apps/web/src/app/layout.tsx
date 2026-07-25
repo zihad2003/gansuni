@@ -8,26 +8,28 @@ import './globals.css'
 
 export const metadata: Metadata = {
   title: {
-    default: 'Gansuni — গানশুনি | Premium Bengali Audio Streaming',
-    template: '%s · Gansuni',
+    default: 'Gaansuni — গানশুনি | Premium Bengali Audio Streaming',
+    template: '%s · Gaansuni',
   },
   description:
-    'Discover, stream, and download your favorite Bangla music. Premium Bengali audio streaming with offline playback.',
+    'Discover, stream, listen to music, and download your favorite Bangla music. Premium Bengali audio streaming with offline playback.',
   keywords: [
     'bangla music',
     'bengali audio',
     'bangla songs',
     'গানশুনি',
+    'gaansuni',
     'gansuni',
     'bangla streaming',
+    'listen to music',
     'rabindra sangeet',
     'nazrul geeti',
     'bangla folk',
     'baul',
   ],
-  authors: [{ name: 'Gansuni' }],
-  creator: 'Gansuni',
-  publisher: 'Gansuni',
+  authors: [{ name: 'Gaansuni' }],
+  creator: 'Gaansuni',
+  publisher: 'Gaansuni',
   formatDetection: {
     email: false,
     telephone: false,
@@ -42,22 +44,22 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'bn_BD',
-    url: 'https://gansuni.app',
-    siteName: 'Gansuni — গানশুনি',
-    title: 'Gansuni — Premium Bengali Audio Streaming',
+    url: 'https://gaansuni.app',
+    siteName: 'Gaansuni — গানশুনি',
+    title: 'Gaansuni — Stream & Listen to Music',
     description: 'Discover, stream, and download your favorite Bangla music.',
     images: [
       {
-        url: 'https://gansuni.app/og.png',
+        url: 'https://gaansuni.app/og.png',
         width: 1200,
         height: 630,
-        alt: 'Gansuni — গানশুনি',
+        alt: 'Gaansuni — গানশুনি',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Gansuni — Premium Bengali Audio Streaming',
+    title: 'Gaansuni — Stream & Listen to Music',
     description: 'Discover, stream, and download your favorite Bangla music.',
     images: ['https://gansuni.app/og.png'],
   },

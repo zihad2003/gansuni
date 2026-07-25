@@ -9,17 +9,17 @@ const config = {
   theme: {
     extend: {
       colors: {
-        spotify: {
-          50: '#f2fbf5',
-          100: '#e1f6e8',
-          200: '#c4ecd3',
-          300: '#97dcb3',
-          400: '#61c48c',
-          500: '#1db954',
-          600: '#149a44',
-          700: '#117a38',
-          800: '#116130',
-          900: '#0f5029',
+        gs: {
+          50: '#FFFBEB',
+          100: '#FEF3C7',
+          200: '#FDE68A',
+          300: '#FCD34D',
+          400: '#FBBF24',
+          500: '#F59E0B',
+          600: '#D97706',
+          700: '#B45309',
+          800: '#92400E',
+          900: '#78350F',
         },
         surface: {
           base: '#000000',
@@ -29,12 +29,8 @@ const config = {
       },
       fontFamily: {
         sans: [
-          'SpotifyMixUI',
-          'CircularSp-Arab',
-          'CircularSp-Hebr',
-          'CircularSp-Cyrl',
-          'CircularSp-Grek',
-          'CircularSp-Deva',
+          'Hind Siliguri',
+          'Inter',
           'Helvetica Neue',
           'helvetica',
           'arial',

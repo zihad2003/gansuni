@@ -7,11 +7,15 @@ node_modules/
 # Testing
 coverage/
 
-# Next.js
+# Next.js & Turbo & Cache
 .next/
 out/
 build/
 dist/
+.turbo/
+.cache/
+.swc/
+public/uploads/
 
 # Expo
 .expo/

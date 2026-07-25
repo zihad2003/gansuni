@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -17,8 +19,12 @@
     --gs-text-primary: #FFFFFF;
     --gs-text-secondary: rgba(255, 255, 255, 0.78);
     --gs-text-muted: rgba(255, 255, 255, 0.55);
-    --gs-accent: #A78BFA;
-    --gs-accent-hover: #c4b5fd;
+    --gs-accent: #F59E0B;
+    --gs-accent-hover: #FBBF24;
+
+    --gs-brand: #F59E0B;
+    --gs-brand-hover: #FBBF24;
+    --gs-brand-secondary: #F97316;
 
     --gs-radius-xs: 2px;
     --gs-radius-sm: 6px;
@@ -52,8 +58,7 @@
     margin: 0;
     padding: 0;
     min-height: 100vh;
-    font-family: 'SpotifyMixUI', 'CircularSp-Arab', 'CircularSp-Hebr', 'CircularSp-Cyrl',
-      'CircularSp-Grek', 'CircularSp-Deva', 'Helvetica Neue', helvetica, arial,
+    font-family: 'Hind Siliguri', 'Inter', 'Helvetica Neue', helvetica, arial,
       'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Meiryo', 'MS Gothic', sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -168,14 +173,15 @@
     cursor: not-allowed;
   }
 
-  .spotify-button {
+  /* Gansuni brand button — warm amber/gold */
+  .gs-button {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: var(--gs-space-3);
     padding: var(--gs-space-5) var(--gs-space-8);
     border-radius: var(--gs-radius-2xl);
-    background: #1DB954;
+    background: linear-gradient(135deg, #F59E0B, #F97316);
     color: #000;
     font-weight: 700;
     font-size: var(--gs-font-size-md);
@@ -183,15 +189,22 @@
     transition: all 150ms ease;
     cursor: pointer;
     user-select: none;
+    box-shadow: 0 2px 12px -2px rgba(245, 158, 11, 0.4);
   }
 
-  .spotify-button:hover:not(:disabled) {
-    background: #1ed760;
+  .gs-button:hover:not(:disabled) {
+    background: linear-gradient(135deg, #FBBF24, #FB923C);
     transform: scale(1.04);
+    box-shadow: 0 4px 20px -4px rgba(245, 158, 11, 0.6);
   }
 
-  .spotify-button:active:not(:disabled) {
+  .gs-button:active:not(:disabled) {
     transform: scale(1);
+  }
+
+  .gs-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 
   .ambient-bg {

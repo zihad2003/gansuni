@@ -58,7 +58,7 @@ export default function LibraryPage(): ReactNode {
                     <button
                       onClick={onPlayLikedAll}
                       disabled={likedTracks.length === 0}
-                      className="spotify-button flex items-center gap-2 font-bold px-6 py-2.5 disabled:opacity-50"
+                      className="gs-button flex items-center gap-2 font-bold px-6 py-2.5 disabled:opacity-50"
                     >
                       <Play size={18} fill="#000" strokeWidth={0} />
                       Play Liked Songs
@@ -101,11 +101,11 @@ export default function LibraryPage(): ReactNode {
                   {likedTracks.length === 0 ? (
                     <div className="p-12 text-center bg-white/5 rounded-2xl border border-white/10">
                       <Heart size={40} className="mx-auto text-white/30 mb-3" />
-                      <h3 className="text-lg font-bold text-white">এখনো কোনো গান পছন্দ করা হয়নি</h3>
+                      <h3 className="text-lg font-bold text-white">এখনো কোনো গান পছন্দ করা হয়নি</h3>
                       <p className="text-xs text-white/60 mt-1 max-w-sm mx-auto">
-                        আপনার পছন্দের গানের পাশে হৃদয় (Heart) আইকনে ক্লিক করে প্রিয় গানগুলো সংরক্ষণ করুন।
+                        আপনার পছন্দের গানের পাশে হৃদয় (Heart) আইকনে ক্লিক করে প্রিয় গানগুলো সংরক্ষণ করুন।
                       </p>
-                      <Link href="/browse" className="inline-block mt-4 text-xs font-bold text-[#1DB954] hover:underline">
+                      <Link href="/browse" className="inline-block mt-4 text-xs font-bold text-[#F59E0B] hover:underline">
                         Browse music catalog →
                       </Link>
                     </div>
@@ -121,7 +121,7 @@ export default function LibraryPage(): ReactNode {
                           >
                             <div className="flex items-center justify-center text-sm font-semibold text-white/50">
                               {playing ? (
-                                <span className="text-[#1DB954] font-bold">▶</span>
+                                <span className="text-[#F59E0B] font-bold">▶</span>
                               ) : (
                                 <>
                                   <span className="group-hover:hidden">{idx + 1}</span>
@@ -146,10 +146,10 @@ export default function LibraryPage(): ReactNode {
                                   e.stopPropagation()
                                   toggleLikeTrack(t.id)
                                 }}
-                                className="p-1.5 rounded-full text-[#1DB954] hover:bg-white/10 transition-colors"
+                                className="p-1.5 rounded-full text-[#F59E0B] hover:bg-white/10 transition-colors"
                                 title="Remove from Liked"
                               >
-                                <Heart size={16} fill="#1DB954" color="#1DB954" />
+                                <Heart size={16} fill="#F59E0B" color="#F59E0B" />
                               </button>
                             </div>
                           </div>
@@ -182,10 +182,10 @@ export default function LibraryPage(): ReactNode {
               {/* TAB CONTENT: DOWNLOADS */}
               {tab === 'DOWNLOADS' && (
                 <div className="p-12 text-center bg-white/5 rounded-2xl border border-white/10">
-                  <Download size={40} className="mx-auto text-emerald-400 mb-3" />
+                  <Download size={40} className="mx-auto text-amber-400 mb-3" />
                   <h3 className="text-lg font-bold text-white">Offline Ready</h3>
                   <p className="text-xs text-white/60 mt-1 max-w-sm mx-auto">
-                    Download tracks on Gansuni Mobile app to listen offline anywhere without cellular data consumption.
+                    Download tracks on Gaansuni Mobile app to listen offline anywhere without cellular data consumption.
                   </p>
                 </div>
               )}

@@ -85,7 +85,7 @@ export default function SearchPage(): ReactNode {
                     onClick={() => setFilter(f)}
                     className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all border ${
                       filter === f
-                        ? 'bg-[#1DB954] text-black border-[#1DB954]'
+                        ? 'bg-[#F59E0B] text-black border-[#F59E0B]'
                         : 'bg-white/5 text-white/70 border-white/10 hover:bg-white/10 hover:text-white'
                     }`}
                   >
@@ -97,8 +97,8 @@ export default function SearchPage(): ReactNode {
               {/* SEARCH RESULTS HEADER */}
               {query.trim() && (
                 <div className="text-sm text-white/60 flex items-center gap-2">
-                  {isSearching && <Loader2 size={16} className="animate-spin text-[#1DB954]" />}
-                  <span><span className="font-semibold text-white">"{query}"</span> এর জন্য লাইভ গান পাওয়া গেছে ({displayTracks.length}):</span>
+                  {isSearching && <Loader2 size={16} className="animate-spin text-[#F59E0B]" />}
+                  <span><span className="font-semibold text-white">"{query}"</span> এর জন্য লাইভ গান পাওয়া গেছে ({displayTracks.length}):</span>
                 </div>
               )}
 
@@ -106,13 +106,13 @@ export default function SearchPage(): ReactNode {
               {(filter === 'ALL' || filter === 'TRACKS') && (
                 <section>
                   <h2 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
-                    <Music size={18} className="text-[#1DB954]" />
+                    <Music size={18} className="text-[#F59E0B]" />
                     <span>গান (Songs - {displayTracks.length})</span>
                   </h2>
 
                   {displayTracks.length === 0 ? (
                     <div className="p-8 text-center bg-white/5 rounded-2xl border border-white/10 text-white/60 text-sm">
-                      কোনো গান পাওয়া যায়নি
+                      কোনো গান পাওয়া যায়নি
                     </div>
                   ) : (
                     <div className="glass-card-strong overflow-hidden rounded-2xl divide-y divide-white/5">
@@ -127,7 +127,7 @@ export default function SearchPage(): ReactNode {
                           >
                             <div className="flex items-center justify-center text-sm font-semibold text-white/50">
                               {playing ? (
-                                <span className="text-[#1DB954] font-bold">▶</span>
+                                <span className="text-[#F59E0B] font-bold">▶</span>
                               ) : (
                                 <>
                                   <span className="group-hover:hidden">{idx + 1}</span>
@@ -152,9 +152,9 @@ export default function SearchPage(): ReactNode {
                                   e.stopPropagation()
                                   toggleLikeTrack(t.id)
                                 }}
-                                className="p-1.5 rounded-full hover:bg-white/10 text-white/60 hover:text-[#1DB954]"
+                                className="p-1.5 rounded-full hover:bg-white/10 text-white/60 hover:text-[#F59E0B]"
                               >
-                                <Heart size={16} fill={liked ? '#1DB954' : 'none'} color={liked ? '#1DB954' : 'currentColor'} />
+                                <Heart size={16} fill={liked ? '#F59E0B' : 'none'} color={liked ? '#F59E0B' : 'currentColor'} />
                               </button>
                             </div>
                           </div>
@@ -169,7 +169,7 @@ export default function SearchPage(): ReactNode {
               {(filter === 'ALL' || filter === 'ARTISTS') && (
                 <section>
                   <h2 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
-                    <Mic2 size={18} className="text-[#14B8A6]" />
+                    <Mic2 size={18} className="text-[#F97316]" />
                     <span>শিল্পী (Artists - {filteredArtists.length})</span>
                   </h2>
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">

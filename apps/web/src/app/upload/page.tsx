@@ -65,20 +65,20 @@ export default function UploadPage(): ReactNode {
 
             <div className="space-y-8">
               {/* HERO BANNER */}
-              <div className="relative overflow-hidden rounded-3xl p-6 sm:p-8 bg-gradient-to-r from-emerald-900/60 via-teal-900/50 to-indigo-900/60 border border-white/15 backdrop-blur-xl shadow-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+              <div className="relative overflow-hidden rounded-3xl p-6 sm:p-8 bg-gradient-to-r from-amber-900/60 via-orange-900/50 to-indigo-900/60 border border-white/15 backdrop-blur-xl shadow-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
                 <div>
-                  <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-emerald-400 border border-white/15 text-xs font-bold w-fit mb-3">
+                  <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-amber-400 border border-white/15 text-xs font-bold w-fit mb-3">
                     <UploadCloud size={14} />
                     <span>Custom Music Storage</span>
                   </div>
                   <h1 className="text-3xl sm:text-4xl font-extrabold text-white">Upload Your MP3 Songs</h1>
                   <p className="mt-2 text-sm text-white/70 max-w-xl">
-                    Upload your own real MP3 audio files to your local Gansuni library. Stream your personal music collection anywhere.
+                    Upload your own real MP3 audio files to your local Gaansuni library. Stream your personal music collection anywhere.
                   </p>
                 </div>
                 <button
                   onClick={() => setIsModalOpen(true)}
-                  className="spotify-button flex items-center gap-2 font-bold px-6 py-3 shadow-xl text-sm flex-shrink-0"
+                  className="gs-button flex items-center gap-2 font-bold px-6 py-3 shadow-xl text-sm flex-shrink-0"
                 >
                   <UploadCloud size={18} />
                   <span>Upload New MP3</span>
@@ -89,21 +89,21 @@ export default function UploadPage(): ReactNode {
               <section>
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-xl font-extrabold text-white flex items-center gap-2">
-                    <Music size={20} className="text-[#1DB954]" />
+                    <Music size={20} className="text-[#F59E0B]" />
                     <span>আপনার আপলোডকৃত গানসমূহ (Your Uploads - {uploadedTracks.length})</span>
                   </h2>
                 </div>
 
                 {uploadedTracks.length === 0 ? (
                   <div className="p-12 text-center bg-white/5 rounded-2xl border border-white/10">
-                    <UploadCloud size={48} className="mx-auto text-emerald-400/50 mb-3" />
-                    <h3 className="text-lg font-bold text-white">এখনো কোনো গান আপলোড করা হয়নি</h3>
+                    <UploadCloud size={48} className="mx-auto text-amber-400/50 mb-3" />
+                    <h3 className="text-lg font-bold text-white">এখনো কোনো গান আপলোড করা হয়নি</h3>
                     <p className="text-xs text-white/60 mt-1 max-w-md mx-auto">
                       আপনার নিজস্ব MP3 গান আপলোড করে আপনার লোকাল মিউজিক লাইব্রেরিতে যুক্ত করুন।
                     </p>
                     <button
                       onClick={() => setIsModalOpen(true)}
-                      className="mt-5 spotify-button inline-flex items-center gap-2 font-bold px-6 py-2.5"
+                      className="mt-5 gs-button inline-flex items-center gap-2 font-bold px-6 py-2.5"
                     >
                       <UploadCloud size={16} />
                       <span>Upload Songs Now</span>
@@ -121,7 +121,7 @@ export default function UploadPage(): ReactNode {
                         >
                           <div className="flex items-center justify-center text-sm font-semibold text-white/50">
                             {playing ? (
-                              <span className="text-[#1DB954] font-bold">▶</span>
+                              <span className="text-[#F59E0B] font-bold">▶</span>
                             ) : (
                               <>
                                 <span className="group-hover:hidden">{idx + 1}</span>

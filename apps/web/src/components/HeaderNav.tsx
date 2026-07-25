@@ -59,7 +59,7 @@ export function HeaderNav({
               value={query}
               onChange={handleInputChange}
               placeholder="গান, শিল্পী বা অ্যালবাম খুঁজুন... (Search songs, artists)"
-              className="w-full pl-10 pr-4 py-2 rounded-full bg-white/10 border border-white/15 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-[#1DB954] text-sm transition-all"
+              className="w-full pl-10 pr-4 py-2 rounded-full bg-white/10 border border-white/15 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-[#F59E0B] text-sm transition-all"
             />
           </form>
         ) : (
@@ -78,19 +78,19 @@ export function HeaderNav({
           onClick={() => router.push('/upload')}
           className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold bg-white/10 hover:bg-white/20 border border-white/15 text-white transition-all"
         >
-          <UploadCloud size={14} className="text-[#1DB954]" />
+          <UploadCloud size={14} className="text-[#F59E0B]" />
           <span>Upload</span>
         </button>
 
         <button
           onClick={() => router.push('/made-for-you')}
-          className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold bg-gradient-to-r from-[#1DB954] to-[#14B8A6] text-black hover:opacity-90 transition-all shadow-md"
+          className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold bg-gradient-to-r from-[#F59E0B] to-[#F97316] text-black hover:opacity-90 transition-all shadow-md"
         >
           <Sparkles size={14} />
           <span>Premium</span>
         </button>
 
-        <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-purple-600 to-emerald-500 p-[2px] cursor-pointer hover:scale-105 transition-transform">
+        <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-[#F59E0B] to-[#F97316] p-[2px] cursor-pointer hover:scale-105 transition-transform">
           <div className="w-full h-full rounded-full bg-neutral-900 flex items-center justify-center text-white font-bold text-xs">
             GS
           </div>

@@ -16,10 +16,10 @@ import type { Track } from '@gansuni/shared'
 type PlayerSlice = PlayerState & PlayerActions
 
 const FALLBACK_AUDIO_URLS = [
+  'https://raw.githubusercontent.com/mdn/webaudio-examples/main/audio-analyser/vibes.mp3',
   'https://commondatastorage.googleapis.com/codeskulptor-demos/DinoJazz.mp3',
-  'https://codeskulptor-demos.commondatastorage.googleapis.com/desolation.mp3',
-  'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
-  'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
+  'https://commondatastorage.googleapis.com/codeskulptor-assets/sounddogs/soundtrack.mp3',
+  'https://raw.githubusercontent.com/rafaelreis-hotmart/Audio-Sample-files/main/sample.mp3',
 ]
 
 interface InternalState {
@@ -48,6 +48,7 @@ export const useAudioPlayer = create<PlayerSlice & InternalState>((set, get) => 
   },
   isLiked: (trackId: string) => get().likedTrackIds.includes(trackId),
   _audioEl: null,
+  isSeeking: false,
 
   _boundEvents: false,
   _shuffleIndices: [],
@@ -123,6 +124,17 @@ export const useAudioPlayer = create<PlayerSlice & InternalState>((set, get) => 
 
     set({ error: null })
 
+    // If clicking the currently selected track, toggle play/pause
+    if (track && state.currentTrack && state.currentTrack.id === track.id) {
+      if (state.playbackState === 'playing' || state.playbackState === 'buffering') {
+        get().pause()
+        return
+      } else {
+        get().resume()
+        return
+      }
+    }
+
     const willPlayNewTrack =
       track && (!state.currentTrack || state.currentTrack.id !== track.id)
 
@@ -152,26 +164,31 @@ export const useAudioPlayer = create<PlayerSlice & InternalState>((set, get) => 
         _shuffleIdx: 0,
       })
 
-      const targetUrl = track.audioUrl || FALLBACK_AUDIO_URLS[0]!
+      let targetUrl = track.audioUrl || FALLBACK_AUDIO_URLS[0]!
+      if (targetUrl.startsWith('http:')) {
+        targetUrl = targetUrl.replace(/^http:/i, 'https:')
+      }
       audio.src = targetUrl
       audio.currentTime = 0
       audio.volume = state.muted ? 0 : clampVolume(state.volume)
       audio.playbackRate = clampSpeed(state.speed)
 
       try {
-        audio.load()
         await audio.play()
         set({ playbackState: 'playing', error: null })
       } catch (e: any) {
-        console.warn('Primary audio.play failed, attempting fallback MP3 stream:', e)
+        console.warn('Primary audio.play failed, attempting fallback stream:', e)
         try {
-          const fallbackUrl = FALLBACK_AUDIO_URLS[Math.abs(track.id.length) % FALLBACK_AUDIO_URLS.length]!
+          const fallbackIndex = Math.abs(track.id.length) % FALLBACK_AUDIO_URLS.length
+          let fallbackUrl = FALLBACK_AUDIO_URLS[fallbackIndex]!
+          if (fallbackUrl.startsWith('http:')) {
+            fallbackUrl = fallbackUrl.replace(/^http:/i, 'https:')
+          }
           audio.src = fallbackUrl
-          audio.load()
           await audio.play()
           set({ playbackState: 'playing', error: null })
         } catch (err2: any) {
-          set({ playbackState: 'paused', error: 'Click Play again to start audio' })
+          set({ playbackState: 'paused', error: 'Click Play to start audio' })
         }
       }
       return
@@ -187,7 +204,6 @@ export const useAudioPlayer = create<PlayerSlice & InternalState>((set, get) => 
         try {
           const fallbackUrl = FALLBACK_AUDIO_URLS[0]!
           audio.src = fallbackUrl
-          audio.load()
           await audio.play()
           set({ playbackState: 'playing', error: null })
         } catch (err: any) {
