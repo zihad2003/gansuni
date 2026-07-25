@@ -2,7 +2,7 @@
 
 import type { ReactNode } from 'react'
 import { useRef, useState, useCallback, useEffect } from 'react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { formatDuration } from '@gansuni/shared'
 import type { Milliseconds } from '@gansuni/shared'
 
@@ -69,11 +69,13 @@ export function ProgressBar({
     return () => window.removeEventListener('pointerup', up)
   }, [seeking])
 
+  const activePct = seeking ? hoverPct : pct
+
   return (
-    <div>
+    <div className="w-full">
       <div
         ref={trackRef}
-        className="relative w-full h-[6px] group cursor-pointer select-none"
+        className="relative w-full h-4 group cursor-pointer select-none flex items-center"
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
@@ -89,70 +91,81 @@ export function ProgressBar({
         aria-valuenow={Math.round(current / 1000)}
         tabIndex={0}
       >
+        {/* TRACK BACKGROUND BAR */}
         <div
-          className="absolute inset-y-0 inset-x-0 m-auto rounded-full overflow-hidden"
+          className="relative w-full rounded-full overflow-hidden transition-all duration-200"
           style={{
-            height: (hovering || seeking) ? '100%' : '70%',
-            background: 'rgba(255,255,255,0.18)',
-            transition: 'height 150ms ease',
+            height: hovering || seeking ? '8px' : '5px',
+            background: 'rgba(255, 255, 255, 0.15)',
           }}
         >
-          <motion.div
-            className="h-full rounded-full"
-            animate={{
-              width: `${pct * 100}%`,
-              background: seeking || hovering ? accent : '#b3b3b3',
-            }}
-            transition={{ duration: 0.08, ease: 'linear' }}
-          />
-          {(hovering || seeking) && (
-            <motion.div
-              className="absolute inset-y-0 rounded-full pointer-events-none"
-              animate={{
-                left: 0,
-                width: `${Math.max(hoverPct, pct) * 100}%`,
-                background: 'rgba(255,255,255,0.12)',
-              }}
-              transition={{ duration: 0.05 }}
+          {/* HOVER PREVIEW INDICATOR */}
+          {hovering && !seeking && (
+            <div
+              className="absolute inset-y-0 left-0 bg-white/20 rounded-full transition-all duration-75"
+              style={{ width: `${hoverPct * 100}%` }}
             />
           )}
+
+          {/* ACTIVE ANIMATED GRADIENT PROGRESS FILL */}
+          <motion.div
+            className="h-full rounded-full relative overflow-hidden"
+            style={{
+              background: 'linear-gradient(90deg, #F59E0B 0%, #F97316 50%, #EC4899 100%)',
+            }}
+            animate={{
+              width: `${activePct * 100}%`,
+            }}
+            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+          >
+            {/* GLOWING SHIMMER LIGHT ON PLAY LINE */}
+            <motion.div
+              className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent"
+              animate={{ x: ['-100%', '200%'] }}
+              transition={{ repeat: Infinity, duration: 2, ease: 'linear' }}
+            />
+          </motion.div>
         </div>
 
+        {/* GLOWING ANIMATED SEEK HANDLE THUMB */}
         <motion.div
-          className="absolute top-1/2 -translate-y-1/2 pointer-events-none rounded-full shadow-lg"
+          className="absolute top-1/2 -translate-y-1/2 rounded-full pointer-events-none z-10 flex items-center justify-center"
           animate={{
-            left: `calc(${pct * 100}% - 6px)`,
-            width: 12,
-            height: 12,
-            background: '#fff',
-            opacity: hovering || seeking ? 1 : 0,
-            scale: (hovering || seeking) ? 1 : 0.6,
-            boxShadow: `0 0 0 4px ${accent}33`,
+            left: `calc(${activePct * 100}% - ${hovering || seeking ? 8 : 5}px)`,
+            width: hovering || seeking ? 16 : 10,
+            height: hovering || seeking ? 16 : 10,
+            scale: seeking ? 1.25 : hovering ? 1.1 : 1,
+            boxShadow: hovering || seeking
+              ? '0 0 16px rgba(245, 158, 11, 0.9), 0 0 8px rgba(249, 115, 22, 0.8)'
+              : '0 0 6px rgba(245, 158, 11, 0.4)',
           }}
-          transition={{ duration: 120 }}
-        />
+          transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+        >
+          <div className="w-full h-full rounded-full bg-white border-2 border-[#F59E0B]" />
+        </motion.div>
 
-        {(hovering || seeking) && hoverPct > 0 && (
-          <motion.div
-            className="absolute -top-8 px-2 py-1 rounded-md text-[11px] font-semibold pointer-events-none whitespace-nowrap"
-            animate={{
-              left: `calc(${hoverPct * 100}%)`,
-              x: '-50%',
-              background: '#0A0A0A',
-              color: '#fff',
-              border: '1px solid rgba(255,255,255,0.15)',
-              opacity: 1,
-            }}
-            initial={{ opacity: 0, y: 2 }}
-            transition={{ duration: 100 }}
-          >
-            {formatDuration(hoverPct * duration)}
-          </motion.div>
-        )}
+        {/* FLOATING SEEK TOOLTIP BADGE */}
+        <AnimatePresence>
+          {(hovering || seeking) && hoverPct > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: -4, scale: 0.85 }}
+              animate={{ opacity: 1, y: -28, scale: 1 }}
+              exit={{ opacity: 0, y: -4, scale: 0.85 }}
+              transition={{ duration: 0.15 }}
+              className="absolute px-2.5 py-1 rounded-lg text-[11px] font-bold pointer-events-none whitespace-nowrap bg-gradient-to-r from-amber-500 to-orange-500 text-black shadow-xl z-20"
+              style={{
+                left: `${hoverPct * 100}%`,
+                transform: 'translateX(-50%)',
+              }}
+            >
+              {formatDuration(hoverPct * duration)}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {showLabels && (
-        <div className="flex justify-between mt-1.5 text-[11px]" style={{ color: 'rgba(255,255,255,0.55)' }}>
+        <div className="flex justify-between mt-1 text-[11px] font-semibold text-white/60">
           <span>{formatDuration(current)}</span>
           <span>{formatDuration(duration)}</span>
         </div>
