@@ -25,18 +25,14 @@ export default function SearchPage(): ReactNode {
   const isCurrentPlaying = (id: string) => currentTrackId === id && (playbackState === 'playing' || playbackState === 'buffering')
 
   useEffect(() => {
-    if (!query.trim()) {
-      setLiveTracks([])
-      setIsSearching(false)
-      return
-    }
+    const searchTarget = query.trim() || 'Trending Music Songs'
 
     const timer = setTimeout(async () => {
       try {
         setIsSearching(true)
-        const res = await fetch(`/api/live-search?q=${encodeURIComponent(query.trim())}`)
+        const res = await fetch(`/api/live-search?q=${encodeURIComponent(searchTarget)}&limit=25`)
         const data = await res.json()
-        if (data.tracks) {
+        if (data.tracks && Array.isArray(data.tracks)) {
           setLiveTracks(data.tracks)
         }
       } catch (e) {
@@ -44,12 +40,12 @@ export default function SearchPage(): ReactNode {
       } finally {
         setIsSearching(false)
       }
-    }, 400)
+    }, query.trim() ? 400 : 0)
 
     return () => clearTimeout(timer)
   }, [query])
 
-  const displayTracks = query.trim() ? (liveTracks.length > 0 ? liveTracks : EXPANDED_TRACKS.filter((t) => t.title.toLowerCase().includes(query.toLowerCase()))) : EXPANDED_TRACKS
+  const displayTracks = liveTracks
 
   const filteredArtists = useMemo(() => {
     if (!query.trim()) return EXPANDED_ARTISTS
@@ -102,12 +98,20 @@ export default function SearchPage(): ReactNode {
               </div>
 
               {/* SEARCH RESULTS HEADER */}
-              {query.trim() && (
-                <div className="text-sm text-white/60 flex items-center gap-2 bg-white/5 p-3 rounded-xl border border-white/10">
-                  {isSearching && <Loader2 size={16} className="animate-spin text-[#F59E0B]" />}
-                  <span>Found <span className="font-extrabold text-amber-400">{displayTracks.length}</span> live YouTube tracks for <span className="font-extrabold text-white">&quot;{query}&quot;</span></span>
+              <div className="text-sm text-white/70 flex items-center justify-between bg-white/5 p-3.5 rounded-2xl border border-white/10">
+                <div className="flex items-center gap-2">
+                  {isSearching && <Loader2 size={18} className="animate-spin text-[#F59E0B]" />}
+                  {query.trim() ? (
+                    <span>Showing <span className="font-extrabold text-amber-400">{displayTracks.length}</span> live YouTube results for <span className="font-extrabold text-white">&quot;{query}&quot;</span></span>
+                  ) : (
+                    <span className="flex items-center gap-2 font-bold text-white">
+                      <Sparkles size={16} className="text-amber-400" />
+                      <span>Trending Music on YouTube</span>
+                    </span>
+                  )}
                 </div>
-              )}
+                <span className="text-xs font-semibold text-white/40 uppercase tracking-widest hidden sm:inline">Live Stream API</span>
+              </div>
 
               {/* TRACKS SECTION */}
               {(filter === 'ALL' || filter === 'TRACKS') && (
