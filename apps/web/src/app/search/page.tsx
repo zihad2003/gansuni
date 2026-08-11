@@ -3,11 +3,12 @@
 import { useState, useEffect, useMemo, type ReactNode } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { Search, Play, Heart, Music, Mic2, Disc, Clock, X, Loader2, Sparkles } from 'lucide-react'
+import { Search, Play, Heart, Music, Mic2, Disc, Clock, X, Loader2, Sparkles, Radio } from 'lucide-react'
 import { EXPANDED_TRACKS, EXPANDED_ARTISTS, EXPANDED_ALBUMS, formatDuration } from '@gansuni/shared'
 import { useAudioPlayer } from '@/store/useAudioPlayer'
 import { Sidebar } from '@/components/Sidebar'
 import { HeaderNav } from '@/components/HeaderNav'
+import { SoundWave } from '@/components/SoundWave'
 
 export default function SearchPage(): ReactNode {
   const [query, setQuery] = useState('')
@@ -77,35 +78,41 @@ export default function SearchPage(): ReactNode {
             <HeaderNav showSearchInput initialSearchQuery={query} onSearchChange={setQuery} />
 
             <div className="space-y-6">
-              {/* FILTER PILLS */}
-              <div className="flex items-center gap-2 overflow-x-auto pb-2">
-                {(['ALL', 'TRACKS', 'ARTISTS', 'ALBUMS'] as const).map((f) => (
-                  <button
-                    key={f}
-                    onClick={() => setFilter(f)}
-                    className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all border ${
-                      filter === f
-                        ? 'bg-[#F59E0B] text-black border-[#F59E0B]'
-                        : 'bg-white/5 text-white/70 border-white/10 hover:bg-white/10 hover:text-white'
-                    }`}
-                  >
-                    {f === 'ALL' ? 'All' : f === 'TRACKS' ? 'Songs' : f === 'ARTISTS' ? 'Artists' : 'Albums'}
-                  </button>
-                ))}
+              {/* FILTER PILLS & LIVE BADGE */}
+              <div className="flex items-center justify-between gap-3 overflow-x-auto pb-2 no-scrollbar">
+                <div className="flex items-center gap-2">
+                  {(['ALL', 'TRACKS', 'ARTISTS', 'ALBUMS'] as const).map((f) => (
+                    <button
+                      key={f}
+                      onClick={() => setFilter(f)}
+                      className={`px-4 py-2 rounded-full text-xs font-black tracking-wide transition-all border ${
+                        filter === f
+                          ? 'bg-gradient-to-r from-[#F59E0B] to-[#F97316] text-black border-transparent shadow-lg shadow-amber-500/25 scale-105'
+                          : 'bg-white/5 text-white/70 border-white/10 hover:bg-white/10 hover:text-white hover:border-white/20'
+                      }`}
+                    >
+                      {f === 'ALL' ? '⚡ All' : f === 'TRACKS' ? '🎵 Songs' : f === 'ARTISTS' ? '🎤 Artists' : '💿 Albums'}
+                    </button>
+                  ))}
+                </div>
+                <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-black tracking-wider uppercase">
+                  <span className="w-2 h-2 rounded-full bg-red-500 animate-ping inline-block" />
+                  <span>YouTube Live Engine</span>
+                </div>
               </div>
 
               {/* SEARCH RESULTS HEADER */}
               {query.trim() && (
-                <div className="text-sm text-white/60 flex items-center gap-2">
+                <div className="text-sm text-white/60 flex items-center gap-2 bg-white/5 p-3 rounded-xl border border-white/10">
                   {isSearching && <Loader2 size={16} className="animate-spin text-[#F59E0B]" />}
-                  <span>Found <span className="font-semibold text-white">{displayTracks.length}</span> live tracks for <span className="font-semibold text-white">&quot;{query}&quot;</span>:</span>
+                  <span>Found <span className="font-extrabold text-amber-400">{displayTracks.length}</span> live YouTube tracks for <span className="font-extrabold text-white">&quot;{query}&quot;</span></span>
                 </div>
               )}
 
               {/* TRACKS SECTION */}
               {(filter === 'ALL' || filter === 'TRACKS') && (
                 <section>
-                  <h2 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
+                  <h2 className="text-lg font-black text-white mb-3 flex items-center gap-2 tracking-tight">
                     <Music size={18} className="text-[#F59E0B]" />
                     <span>Songs ({displayTracks.length})</span>
                   </h2>
@@ -115,7 +122,7 @@ export default function SearchPage(): ReactNode {
                       No songs found
                     </div>
                   ) : (
-                    <div className="glass-card-strong overflow-hidden rounded-2xl divide-y divide-white/5">
+                    <div className="glass-card-strong overflow-hidden rounded-2xl divide-y divide-white/5 shadow-2xl">
                       {displayTracks.map((t, idx) => {
                         const playing = isCurrentPlaying(t.id)
                         const liked = likedTrackIds.includes(t.id)
@@ -123,11 +130,15 @@ export default function SearchPage(): ReactNode {
                           <div
                             key={t.id}
                             onClick={() => onPlayTrack(t)}
-                            className="group grid grid-cols-[36px_1fr_minmax(80px,auto)] sm:grid-cols-[32px_1fr_1fr_80px_48px] gap-3 px-4 py-3 items-center hover:bg-white/5 cursor-pointer transition-colors"
+                            className={`group grid grid-cols-[36px_1fr_minmax(80px,auto)] sm:grid-cols-[32px_1fr_1fr_80px_48px] gap-3 px-4 py-3.5 items-center cursor-pointer transition-all duration-200 ${
+                              playing
+                                ? 'bg-amber-500/10 border-l-4 border-l-[#F59E0B]'
+                                : 'hover:bg-white/10'
+                            }`}
                           >
-                            <div className="flex items-center justify-center text-sm font-semibold text-white/50">
+                            <div className="flex items-center justify-center text-sm font-bold text-white/50">
                               {playing ? (
-                                <span className="text-[#F59E0B] font-bold">▶</span>
+                                <SoundWave height={14} color="#F59E0B" />
                               ) : (
                                 <>
                                   <span className="group-hover:hidden">{idx + 1}</span>
