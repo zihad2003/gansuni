@@ -4,12 +4,23 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build && node -e \"const fs = require('fs'); if (fs.existsSync('out')) { fs.cpSync('out', '.next', { recursive: true }); } fs.rmSync('.next/cache', { recursive: true, force: true });\"",
+    "build": "next build",
+    "export": "next build && next export",
     "start": "next start",
     "lint": "next lint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "cap:sync": "cap sync android",
+    "cap:open": "cap open android",
+    "cap:build": "pnpm export && pnpm cap:sync && cd android && ./gradlew assembleDebug",
+    "cap:build:release": "pnpm export && pnpm cap:sync && cd android && ./gradlew assembleRelease",
+    "apk:debug": "pnpm cap:build",
+    "apk:release": "pnpm cap:build:release"
   },
   "dependencies": {
+    "@capacitor/android": "^6.1.0",
+    "@capacitor/core": "^6.1.0",
+    "@capacitor/http": "^6.1.0",
+    "@capacitor/splash-screen": "^6.1.0",
     "@distube/ytdl-core": "^4.16.12",
     "@gansuni/db": "workspace:*",
     "@gansuni/shared": "workspace:*",
@@ -26,13 +37,14 @@
     "zustand": "^4.5.4"
   },
   "devDependencies": {
+    "@capacitor/cli": "^6.1.0",
     "@types/howler": "^2.2.11",
     "@types/node": "^20.14.10",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
     "autoprefixer": "^10.4.19",
     "eslint": "^8.57.0",
-    "eslint-config-next": "14.2.5",
+    "eslint-config-next": "14.2.0",
     "postcss": "^8.4.40",
     "tailwindcss": "^3.4.7",
     "typescript": "^5.5.4"

@@ -36,5 +36,5 @@
     "../../packages/shared/src/**/*",
     "../../packages/db/src/**/*"
   ],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules", "capacitor.config.ts"]
 }

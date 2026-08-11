@@ -6,7 +6,7 @@ const withPWA = require('next-pwa')({
   disable: process.env.NODE_ENV === 'development',
   runtimeCaching: [
     {
-      urlPattern: /^https:\/\/.*\.(mp3|wav|ogg|m4a|flac)$/i,
+      urlPattern: /^https:\/\/.*\.(mp3|wav|ogg|m4a|flac|webm|m4a)$/i,
       handler: 'CacheFirst',
       options: {
         cacheName: 'gansuni-audio-cache',
@@ -26,6 +26,18 @@ const withPWA = require('next-pwa')({
           maxEntries: 200,
           maxAgeSeconds: 60 * 60 * 24 * 30,
         },
+      },
+    },
+    {
+      urlPattern: /^https:\/\/.*youtube.*\/.*/i,
+      handler: 'NetworkFirst',
+      options: {
+        cacheName: 'gansuni-youtube-cache',
+        expiration: {
+          maxEntries: 50,
+          maxAgeSeconds: 60 * 60 * 24 * 7,
+        },
+        cacheableResponse: { statuses: [0, 200] },
       },
     },
   ],

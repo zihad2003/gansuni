@@ -5,7 +5,6 @@ import { useAudioPlayer } from '@/store/useAudioPlayer'
 import { useTheme } from '@/providers/ThemeProvider'
 import { AmbientBackground } from '@/components/AmbientBackground'
 import { MiniPlayer } from '@/components/player/MiniPlayer'
-
 import { MobileBottomNav } from '@/components/MobileBottomNav'
 
 interface PlayerProviderProps {
@@ -14,6 +13,7 @@ interface PlayerProviderProps {
 
 export function PlayerProvider({ children }: PlayerProviderProps): ReactNode {
   const currentTrack = useAudioPlayer((s) => s.currentTrack)
+  const playbackState = useAudioPlayer((s) => s.playbackState)
   const { setSourceImage } = useTheme()
 
   useEffect(() => {
@@ -87,24 +87,34 @@ export function PlayerProvider({ children }: PlayerProviderProps): ReactNode {
         if (s.currentTrack && s.currentTrack.id && typeof navigator !== 'undefined') {
           if ('mediaSession' in navigator) {
             const ms = navigator.mediaSession
+            const artwork = s.currentTrack.album?.coverArtUrl
+              ? [
+                  {
+                    src: s.currentTrack.album.coverArtUrl,
+                    sizes: '512x512',
+                    type: 'image/jpeg',
+                  },
+                  {
+                    src: s.currentTrack.album.coverArtUrl,
+                    sizes: '192x192',
+                    type: 'image/jpeg',
+                  },
+                ]
+              : []
+
             ms.metadata = new MediaMetadata({
               title: s.currentTrack.title,
               artist: s.currentTrack.artist?.name ?? '',
               album: s.currentTrack.album?.title ?? '',
-              artwork: s.currentTrack.album?.coverArtUrl
-                ? [
-                    {
-                      src: s.currentTrack.album.coverArtUrl,
-                      sizes: '512x512',
-                      type: 'image/jpeg',
-                    },
-                  ]
-                : [],
+              artwork,
             })
-            ms.playbackState =
-              s.playbackState === 'playing' ? 'playing' : 'paused'
+
+            const isActive = s.playbackState === 'playing' || s.playbackState === 'buffering'
+            ms.playbackState = isActive ? 'playing' : 'paused'
+
             ms.setActionHandler('play', () => s.play())
             ms.setActionHandler('pause', () => s.pause())
+            ms.setActionHandler('stop', () => s.reset())
             ms.setActionHandler('nexttrack', () => s.next())
             ms.setActionHandler('previoustrack', () => s.previous())
             ms.setActionHandler('seekto', (d) => s.seekTo((d.seekTime ?? 0) * 1000))
@@ -114,6 +124,16 @@ export function PlayerProvider({ children }: PlayerProviderProps): ReactNode {
             ms.setActionHandler('seekbackward', (d) =>
               s.seekTo(Math.max(0, s.currentTime - (d.seekOffset ?? 10) * 1000)),
             )
+
+            if ('setPositionState' in ms) {
+              try {
+                ;(ms as any).setPositionState({
+                  duration: (s.duration || 0) / 1000,
+                  playbackRate: s.speed,
+                  position: (s.currentTime || 0) / 1000,
+                })
+              } catch {}
+            }
           }
         }
       } catch {}

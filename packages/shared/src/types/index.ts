@@ -46,7 +46,8 @@ export interface Track {
   albumId: ID
   artist?: Artist
   album?: Album
-  audioUrl: string
+  audioUrl?: string | null
+  youtubeId?: string | null
   durationMs: Milliseconds
   trackNumber: number
   discNumber: number

@@ -46,7 +46,7 @@ export function deleteUploadedTrack(trackId: string): boolean {
     if (!target) return false
 
     // Clean up files if they exist locally in public/uploads
-    if (target.audioUrl.startsWith('/uploads/audio/')) {
+    if (target.audioUrl && target.audioUrl.startsWith('/uploads/audio/')) {
       const audioPath = path.join(process.cwd(), 'public', target.audioUrl)
       if (fs.existsSync(audioPath)) fs.unlinkSync(audioPath)
     }

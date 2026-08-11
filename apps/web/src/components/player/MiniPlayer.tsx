@@ -59,13 +59,26 @@ export function MiniPlayer(): ReactNode {
 
   const isPlaying = playbackState === 'playing' || playbackState === 'buffering'
   const isLoading = playbackState === 'loading'
+  const isError = playbackState === 'error'
+  const isBuffering = playbackState === 'buffering'
   const hasTrack = !!track
+
+  const getStatusLabel = () => {
+    if (isLoading) return 'Resolving stream...'
+    if (isBuffering) return 'Buffering...'
+    if (isError) return 'Stream error — tap to retry'
+    return ''
+  }
 
   const onTogglePlay = useCallback(() => {
     if (!track) return
+    if (isError) {
+      useAudioPlayer.getState().play()
+      return
+    }
     if (isPlaying) pause()
     else play()
-  }, [track, isPlaying, play, pause])
+  }, [track, isPlaying, isError, play, pause])
 
   const onDownload = useCallback(() => {
     if (!track) return
@@ -165,7 +178,7 @@ export function MiniPlayer(): ReactNode {
               </div>
 
               {/* CONTROLS */}
-              <div className="flex items-center justify-between w-full max-w-xs mb-6">
+              <div className="flex items-center justify-between w-full max-w-xs mb-2">
                 <button onClick={toggleShuffle} className={`p-2 rounded-full transition-colors ${shuffle ? 'text-amber-400' : 'text-white/60 hover:text-white'}`}>
                   <Shuffle size={20} />
                 </button>
@@ -192,6 +205,12 @@ export function MiniPlayer(): ReactNode {
                   {repeat === 'one' ? <Repeat1 size={20} /> : <Repeat size={20} />}
                 </button>
               </div>
+
+              {getStatusLabel() && (
+                <div className={`text-xs font-medium mb-4 ${isError ? 'text-red-400' : 'text-white/50'}`}>
+                  {getStatusLabel()}
+                </div>
+              )}
 
               {/* VOLUME SLIDER */}
               <div className="w-full flex items-center gap-3 max-w-xs">
@@ -308,8 +327,14 @@ export function MiniPlayer(): ReactNode {
                   <div className="font-semibold text-sm sm:text-base truncate" style={{ color: themeColors.textPrimary }}>
                     {track?.title}
                   </div>
-                  <div className="text-xs sm:text-sm truncate mt-0.5" style={{ color: themeColors.textSecondary }}>
-                    {track?.artist?.name || track?.album?.artist?.name} • {track?.album?.title}
+                  <div className="text-xs sm:text-sm truncate mt-0.5 flex items-center gap-2" style={{ color: themeColors.textSecondary }}>
+                    <span>{track?.artist?.name || track?.album?.artist?.name} • {track?.album?.title}</span>
+                    {(playbackState === 'loading' || playbackState === 'buffering') && (
+                      <span className="text-[10px] text-amber-400 font-medium animate-pulse">Resolving stream...</span>
+                    )}
+                    {playbackState === 'error' && (
+                      <span className="text-[10px] text-red-400 font-medium">Tap to retry</span>
+                    )}
                   </div>
                 </div>
 

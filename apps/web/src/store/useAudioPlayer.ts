@@ -34,7 +34,12 @@ interface InternalState {
   _shuffleIdx: number
   _ensureAudio: () => HTMLAudioElement
   _bindAudioEvents: () => void
+  _resolveAudioUrl: (track: Track) => Promise<string>
+  _retryCount: number
 }
+
+const MAX_RETRIES = 3
+const STREAM_API = '/api/stream'
 
 export const useAudioPlayer = create<PlayerSlice & InternalState>((set, get) => ({
   ...DEFAULT_PLAYER_STATE,
@@ -75,6 +80,7 @@ export const useAudioPlayer = create<PlayerSlice & InternalState>((set, get) => 
   _boundEvents: false,
   _shuffleIndices: [],
   _shuffleIdx: -1,
+  _retryCount: 0,
 
   _ensureAudio(): HTMLAudioElement {
     if (typeof window === 'undefined') return null as any
@@ -82,6 +88,7 @@ export const useAudioPlayer = create<PlayerSlice & InternalState>((set, get) => 
     if (cur) return cur
     const el = new Audio()
     el.preload = 'auto'
+    el.crossOrigin = 'anonymous'
     set({ _audioEl: el, _boundEvents: false })
     get()._bindAudioEvents()
     return el
@@ -93,7 +100,7 @@ export const useAudioPlayer = create<PlayerSlice & InternalState>((set, get) => 
     const audio = st._audioEl
 
     audio.addEventListener('loadedmetadata', () => {
-      set({ duration: (audio.duration || 0) * 1000 })
+      set({ duration: (audio.duration || 0) * 1000, playbackState: 'loading' })
     })
 
     audio.addEventListener('timeupdate', () => {
@@ -121,6 +128,14 @@ export const useAudioPlayer = create<PlayerSlice & InternalState>((set, get) => 
       set({ playbackState: 'buffering' })
     })
 
+    audio.addEventListener('stalled', () => {
+      set({ playbackState: 'buffering' })
+    })
+
+    audio.addEventListener('suspend', () => {
+      set({ playbackState: 'buffering' })
+    })
+
     audio.addEventListener('ended', () => {
       const s = get()
       if (s.repeat === 'one') {
@@ -131,12 +146,39 @@ export const useAudioPlayer = create<PlayerSlice & InternalState>((set, get) => 
       }
     })
 
-    audio.addEventListener('error', () => {
+    audio.addEventListener('error', async () => {
+      const s = get()
       const err = audio.error
-      console.warn('Audio playback error:', err?.message)
+      console.warn('Audio playback error:', err?.message, err?.code)
+      if (s._retryCount < MAX_RETRIES && s.currentTrack) {
+        const nextRetry = s._retryCount + 1
+        set({ _retryCount: nextRetry, playbackState: 'loading', error: `Retrying stream (${nextRetry}/${MAX_RETRIES})...` })
+        try {
+          const resolvedUrl = await s._resolveAudioUrl(s.currentTrack)
+          audio.src = resolvedUrl
+          await audio.play()
+          set({ playbackState: 'playing', error: null, _retryCount: 0 })
+        } catch {
+          set({ playbackState: 'error', error: 'Stream resolution failed. Click retry.' })
+        }
+      } else {
+        set({ playbackState: 'error', error: 'Playback failed. Click retry or skip.' })
+      }
     })
 
     set({ _boundEvents: true })
+  },
+
+  _resolveAudioUrl: async (track: Track): Promise<string> => {
+    const videoId = track.youtubeId || track.id
+    const res = await fetch(`${STREAM_API}?videoId=${encodeURIComponent(videoId)}&q=${encodeURIComponent(track.title + ' ' + (track.artist?.name || ''))}`)
+    if (!res.ok) throw new Error(`Stream API returned ${res.status}`)
+    const data = await res.json()
+    if (data?.audioUrl) {
+      set({ error: null })
+      return data.audioUrl.replace(/^http:/i, 'https:')
+    }
+    throw new Error(data?.error || 'No audio URL in stream response')
   },
 
   play: async (track?: Track, queue?: QueueItem[], startIndex = 0) => {
@@ -144,9 +186,8 @@ export const useAudioPlayer = create<PlayerSlice & InternalState>((set, get) => 
     const audio = state._ensureAudio()
     if (!audio) return
 
-    set({ error: null })
+    set({ error: null, _retryCount: 0 })
 
-    // If clicking the currently selected track, toggle play/pause
     if (track && state.currentTrack && state.currentTrack.id === track.id) {
       if (state.playbackState === 'playing' || state.playbackState === 'buffering') {
         get().pause()
@@ -187,7 +228,15 @@ export const useAudioPlayer = create<PlayerSlice & InternalState>((set, get) => 
         playedHistory: [track, ...s.playedHistory.filter((t) => t.id !== track.id)].slice(0, 50),
       }))
 
-      let targetUrl = track.audioUrl || FALLBACK_AUDIO_URLS[0]!
+      let targetUrl = track.audioUrl || ''
+      if (!targetUrl) {
+        try {
+          targetUrl = await get()._resolveAudioUrl(track)
+        } catch (e: any) {
+          const fallbackIndex = Math.abs(track.id.length) % FALLBACK_AUDIO_URLS.length
+          targetUrl = FALLBACK_AUDIO_URLS[fallbackIndex]!
+        }
+      }
       if (targetUrl.startsWith('http:')) {
         targetUrl = targetUrl.replace(/^http:/i, 'https:')
       }
@@ -198,27 +247,24 @@ export const useAudioPlayer = create<PlayerSlice & InternalState>((set, get) => 
 
       try {
         await audio.play()
-        set({ playbackState: 'playing', error: null })
+        set({ playbackState: 'playing', error: null, _retryCount: 0 })
       } catch (e: any) {
-        console.warn('Primary audio.play failed, resolving stream via API stream resolver:', e)
+        console.warn('Primary audio.play failed, retrying:', e)
         try {
-          const res = await fetch(`/api/stream?q=${encodeURIComponent((track.artist?.name || '') + ' ' + track.title)}`)
-          if (res.ok) {
-            const streamData = await res.json()
-            if (streamData?.audioUrl) {
-              audio.src = streamData.audioUrl.replace(/^http:/i, 'https:')
-              await audio.play()
-              set({ playbackState: 'playing', error: null })
-              return
-            }
-          }
-          const fallbackIndex = Math.abs(track.id.length) % FALLBACK_AUDIO_URLS.length
-          let fallbackUrl = FALLBACK_AUDIO_URLS[fallbackIndex]!
-          audio.src = fallbackUrl.replace(/^http:/i, 'https:')
+          const resolvedUrl = await get()._resolveAudioUrl(track)
+          audio.src = resolvedUrl
           await audio.play()
-          set({ playbackState: 'playing', error: null })
+          set({ playbackState: 'playing', error: null, _retryCount: 0 })
         } catch (err2: any) {
-          set({ playbackState: 'paused', error: 'Click Play to start audio' })
+          const fallbackIndex = Math.abs(track.id.length) % FALLBACK_AUDIO_URLS.length
+          const fallbackUrl = FALLBACK_AUDIO_URLS[fallbackIndex]!
+          audio.src = fallbackUrl
+          try {
+            await audio.play()
+            set({ playbackState: 'playing', error: null, _retryCount: 0 })
+          } catch {
+            set({ playbackState: 'paused', error: 'Stream unavailable. Try another track.' })
+          }
         }
       }
       return
@@ -449,6 +495,6 @@ export const useAudioPlayer = create<PlayerSlice & InternalState>((set, get) => 
       audio.pause()
       audio.src = ''
     }
-    set({ ...DEFAULT_PLAYER_STATE, currentTrack: null, queue: [], playbackState: 'idle' })
+    set({ ...DEFAULT_PLAYER_STATE, currentTrack: null, queue: [], playbackState: 'idle', _retryCount: 0 })
   },
 }))
