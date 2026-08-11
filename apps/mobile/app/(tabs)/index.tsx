@@ -44,18 +44,32 @@ export default function HomeScreen() {
   const play = useMobilePlayer((s) => s.play)
   const currentTrackId = useMobilePlayer((s) => s.currentTrack?.id)
   const playbackState = useMobilePlayer((s) => s.playbackState)
+  const [liveTracks, setLiveTracks] = React.useState<any[]>([])
+
+  React.useEffect(() => {
+    fetch('https://gaansuni.pages.dev/api/live-search?q=Trending%20Music&limit=25')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.tracks && Array.isArray(data.tracks)) {
+          setLiveTracks(data.tracks)
+        }
+      })
+      .catch(() => {})
+  }, [])
+
+  const activeTracks = liveTracks.length > 0 ? liveTracks : EXPANDED_TRACKS
 
   const onPlayTrack = useCallback(
     (index: number) => {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
-      const track = DEMO_TRACKS[index]!
+      const track = activeTracks[index]!
       play(
         track as any,
-        DEMO_TRACKS.map((t) => ({ trackId: t.id, track: t as any })),
+        activeTracks.map((t) => ({ trackId: t.id, track: t as any })),
         index,
       )
     },
-    [play],
+    [play, activeTracks],
   )
 
   const onPlayAll = useCallback(() => {

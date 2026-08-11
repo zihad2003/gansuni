@@ -27,26 +27,22 @@ export default function SearchScreen() {
   const currentTrack = useMobilePlayer((s) => s.currentTrack)
 
   useEffect(() => {
-    if (!query.trim()) {
-      setLiveTracks([])
-      setLoading(false)
-      return
-    }
+    const targetQuery = query.trim() || 'Trending Music Songs'
 
     const timer = setTimeout(async () => {
       try {
         setLoading(true)
-        const res = await fetch(`https://gansuni.app/api/live-search?q=${encodeURIComponent(query.trim())}`)
+        const res = await fetch(`https://gaansuni.pages.dev/api/live-search?q=${encodeURIComponent(targetQuery)}&limit=25`)
         if (res.ok) {
           const data = await res.json()
-          if (data.tracks) setLiveTracks(data.tracks)
+          if (data.tracks && Array.isArray(data.tracks)) setLiveTracks(data.tracks)
         }
       } catch (e) {
         console.warn('Mobile search fetch error:', e)
       } finally {
         setLoading(false)
       }
-    }, 400)
+    }, query.trim() ? 400 : 0)
 
     return () => clearTimeout(timer)
   }, [query])
