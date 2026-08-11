@@ -9,9 +9,6 @@ const config: CapacitorConfig = {
     cleartext: false,
   },
   plugins: {
-    CapacitorHttp: {
-      enabled: true,
-    },
     SplashScreen: {
       launchAutoHide: false,
       backgroundColor: '#000000',
