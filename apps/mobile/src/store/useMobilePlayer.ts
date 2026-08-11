@@ -83,7 +83,7 @@ export const useMobilePlayer = create<PlayerSlice & InternalState>((set, get) =>
     })
 
     if (status.didJustFinish) {
-      set({ playbackState: 'paused' }, true)
+      set({ playbackState: 'paused' })
       get().next()
     }
   },
@@ -108,7 +108,7 @@ export const useMobilePlayer = create<PlayerSlice & InternalState>((set, get) =>
       const download = state._downloads.get(track.id)
       if (download) return { uri: download.localUri, isOffline: true }
     }
-    return { uri: track.audioUrl, isOffline: false }
+    return { uri: track.audioUrl || '', isOffline: false }
   },
 
   _unloadCurrent: async () => {
@@ -450,14 +450,17 @@ export async function downloadTrackForOffline(
   quality: 'STANDARD' | 'HIGH' = 'STANDARD',
   onProgress?: (pct: number) => void,
 ): Promise<{ localUri: string; size: Bytes }> {
+  if (!track.audioUrl) throw new Error('Track has no audio URL')
+  const audioUrl = track.audioUrl
+
   const baseDir = FileSystem.cacheDirectory || FileSystem.documentDirectory || ''
   const dir = `${baseDir}gansuni/downloads/`
   await FileSystem.makeDirectoryAsync(dir, { intermediates: true })
 
-  const ext = track.audioUrl.split('?')[0]!.split('.').pop() || 'mp3'
+  const ext = audioUrl.split('?')[0]!.split('.').pop() || 'mp3'
   const localUri = `${dir}${track.id}.${ext}`
 
-  const dl = FileSystem.createDownloadResumable(track.audioUrl, localUri, {}, (d) => {
+  const dl = FileSystem.createDownloadResumable(audioUrl, localUri, {}, (d) => {
     if (d.totalBytesExpectedToWrite > 0 && onProgress) {
       onProgress(d.totalBytesWritten / d.totalBytesExpectedToWrite)
     }
