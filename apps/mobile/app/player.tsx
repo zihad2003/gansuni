@@ -32,6 +32,7 @@ import {
   Repeat,
   Repeat1,
   Volume2,
+  VolumeX,
   Heart,
   Share2,
   Download,
@@ -60,6 +61,7 @@ export default function FullPlayerScreen() {
   const previous = useMobilePlayer((s) => s.previous)
   const seekTo = useMobilePlayer((s) => s.seekTo)
   const setVolume = useMobilePlayer((s) => s.setVolume)
+  const toggleMute = useMobilePlayer((s) => s.toggleMute)
   const volume = useMobilePlayer((s) => s.volume)
   const muted = useMobilePlayer((s) => s.muted)
   const shuffle = useMobilePlayer((s) => s.shuffle)
@@ -319,6 +321,32 @@ export default function FullPlayerScreen() {
                 />
               )}
             </Pressable>
+          </View>
+
+          <View style={styles.volumeRow}>
+            <Pressable
+              onPress={() => {
+                hapticSel()
+                toggleMute()
+              }}
+              hitSlop={10}
+            >
+              {muted || volume === 0 ? (
+                <VolumeX size={20} color={themeColors.textSecondary} />
+              ) : (
+                <Volume2 size={20} color={themeColors.textSecondary} />
+              )}
+            </Pressable>
+            <Slider
+              value={muted ? 0 : volume}
+              minimumValue={0}
+              maximumValue={1}
+              onValueChange={(val) => setVolume(val)}
+              minimumTrackTintColor={themeColors.accent}
+              maximumTrackTintColor="rgba(255,255,255,0.22)"
+              thumbTintColor="#fff"
+              style={styles.volSlider}
+            />
           </View>
 
           <View style={styles.secondaryControls}>

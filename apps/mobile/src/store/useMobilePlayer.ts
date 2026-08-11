@@ -301,18 +301,19 @@ export const useMobilePlayer = create<PlayerSlice & InternalState>((set, get) =>
     const v = clampVolume(vol)
     const s = get()
     if (s._sound) {
-      try { await s._sound.setVolumeAsync(v) } catch {}
+      try { await s._sound.setVolumeAsync(s.muted ? 0 : v) } catch {}
     }
-    set({ volume: v, muted: v === 0 ? true : s.muted })
+    set({ volume: v, muted: v === 0 })
   },
 
   toggleMute: async () => {
     const s = get()
     const nextMuted = !s.muted
+    const volToApply = nextMuted ? 0 : clampVolume(s.volume > 0 ? s.volume : 0.8)
     if (s._sound) {
-      try { await s._sound.setVolumeAsync(nextMuted ? 0 : clampVolume(s.volume || 0.8)) } catch {}
+      try { await s._sound.setVolumeAsync(volToApply) } catch {}
     }
-    set({ muted: nextMuted })
+    set({ muted: nextMuted, volume: volToApply > 0 ? volToApply : s.volume })
   },
 
   toggleShuffle: () => {

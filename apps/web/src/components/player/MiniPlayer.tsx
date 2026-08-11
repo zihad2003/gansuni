@@ -418,6 +418,9 @@ export function MiniPlayer(): ReactNode {
                 </div>
 
                 <div className="sm:hidden flex items-center gap-1">
+                  <IconButton onClick={toggleMute} label={muted ? 'Unmute' : 'Mute'} theme={themeColors}>
+                    {muted || volume === 0 ? <VolumeX size={18} /> : <Volume2 size={18} />}
+                  </IconButton>
                   <IconButton onClick={() => setExpanded(true)} label="Expand player" theme={themeColors}>
                     <Maximize2 size={20} />
                   </IconButton>
