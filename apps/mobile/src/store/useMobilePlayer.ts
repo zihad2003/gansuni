@@ -108,7 +108,24 @@ export const useMobilePlayer = create<PlayerSlice & InternalState>((set, get) =>
       const download = state._downloads.get(track.id)
       if (download) return { uri: download.localUri, isOffline: true }
     }
-    return { uri: track.audioUrl || '', isOffline: false }
+
+    let uri = track.audioUrl || ''
+    if (!uri || uri.startsWith('/api/stream') || uri.includes('/api/stream')) {
+      try {
+        const videoId = track.youtubeId || track.id.replace('yt_', '')
+        const res = await fetch(`https://gaansuni.pages.dev/api/stream?videoId=${encodeURIComponent(videoId)}&q=${encodeURIComponent(track.title + ' ' + (track.artist?.name || ''))}`)
+        if (res.ok) {
+          const data = await res.json()
+          if (data?.audioUrl) {
+            uri = data.audioUrl.replace(/^http:/i, 'https:')
+          }
+        }
+      } catch (e) {
+        console.warn('Mobile resolve stream error:', e)
+      }
+    }
+
+    return { uri, isOffline: false }
   },
 
   _unloadCurrent: async () => {

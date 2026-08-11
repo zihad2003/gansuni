@@ -223,6 +223,15 @@ export async function onRequestGet(context) {
         if (result.audioUrl.startsWith('http:')) {
           result.audioUrl = result.audioUrl.replace(/^http:/i, 'https:')
         }
+        if (url.searchParams.get('redirect') === '1' || url.searchParams.get('direct') === '1') {
+          return new Response(null, {
+            status: 302,
+            headers: {
+              Location: result.audioUrl,
+              ...CORS_HEADERS,
+            },
+          })
+        }
         return jsonResponse(result)
       }
     } catch (resolveErr) {

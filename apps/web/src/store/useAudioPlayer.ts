@@ -232,7 +232,7 @@ export const useAudioPlayer = create<PlayerSlice & InternalState>((set, get) => 
       }))
 
       let targetUrl = track.audioUrl || ''
-      if (!targetUrl) {
+      if (!targetUrl || targetUrl.startsWith('/api/stream') || targetUrl.includes('/api/stream')) {
         try {
           targetUrl = await get()._resolveAudioUrl(track)
         } catch (e: any) {
