@@ -171,7 +171,10 @@ export const useAudioPlayer = create<PlayerSlice & InternalState>((set, get) => 
 
   _resolveAudioUrl: async (track: Track): Promise<string> => {
     const videoId = track.youtubeId || track.id
-    const res = await fetch(`${STREAM_API}?videoId=${encodeURIComponent(videoId)}&q=${encodeURIComponent(track.title + ' ' + (track.artist?.name || ''))}`)
+    const res = await fetch(
+      `${STREAM_API}?videoId=${encodeURIComponent(videoId)}&q=${encodeURIComponent(track.title + ' ' + (track.artist?.name || ''))}`,
+      { signal: AbortSignal.timeout(10000) }
+    )
     if (!res.ok) throw new Error(`Stream API returned ${res.status}`)
     const data = await res.json()
     if (data?.audioUrl) {

@@ -1,9 +1,31 @@
+const CORS_HEADERS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+}
+
+function jsonResponse(data, status = 200) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: {
+      'Content-Type': 'application/json',
+      ...CORS_HEADERS,
+    },
+  })
+}
+
+export async function onRequestOptions() {
+  return new Response(null, { status: 204, headers: CORS_HEADERS })
+}
+
 const PIPED_INSTANCES = [
   'https://pipedapi.kavin.rocks',
   'https://api.piped.privacydev.net',
   'https://piped-api.garudalinux.org',
   'https://pipedapi.adminforge.de',
   'https://pipedapi.silkky.cloud',
+  'https://pipedapi.mha.fi',
+  'https://piped-api.lunar.icu',
 ]
 
 const INVIDIOUS_INSTANCES = [
@@ -12,6 +34,8 @@ const INVIDIOUS_INSTANCES = [
   'https://iv.datura.network',
   'https://invidious.nerdvpn.de',
   'https://inv.nadeko.net',
+  'https://invidious.drgns.space',
+  'https://inv.tux.pizza',
 ]
 
 function cleanSearchQuery(raw) {
@@ -172,7 +196,7 @@ export async function onRequestGet(context) {
     const videoId = url.searchParams.get('videoId') || url.searchParams.get('v') || url.searchParams.get('id')
 
     if (!query && !videoId) {
-      return Response.json({ error: 'Missing query or videoId parameter' }, { status: 400 })
+      return jsonResponse({ error: 'Missing query or videoId parameter' }, 400)
     }
 
     let targetVideoId = videoId
@@ -183,7 +207,7 @@ export async function onRequestGet(context) {
 
     if (!targetVideoId) {
       const fallbackIndex = Math.abs((query || 'fallback').length) % FALLBACK_STREAMS.length
-      return Response.json({
+      return jsonResponse({
         title: query || 'Fallback Track',
         artist: 'Gaansuni Artist',
         durationMs: 240000,
@@ -199,12 +223,12 @@ export async function onRequestGet(context) {
         if (result.audioUrl.startsWith('http:')) {
           result.audioUrl = result.audioUrl.replace(/^http:/i, 'https:')
         }
-        return Response.json(result)
+        return jsonResponse(result)
       }
     } catch (resolveErr) {
       console.warn('YouTube resolve failed:', resolveErr.message)
       const fallbackIndex = Math.abs(targetVideoId.length) % FALLBACK_STREAMS.length
-      return Response.json({
+      return jsonResponse({
         title: query || 'YouTube Track',
         artist: 'Gaansuni Artist',
         durationMs: 210000,
@@ -214,6 +238,6 @@ export async function onRequestGet(context) {
       })
     }
   } catch (error) {
-    return Response.json({ error: error?.message || 'Failed to resolve stream' }, { status: 500 })
+    return jsonResponse({ error: error?.message || 'Failed to resolve stream' }, 500)
   }
 }

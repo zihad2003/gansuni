@@ -3,10 +3,10 @@ import type { CapacitorConfig } from '@capacitor/cli'
 const config: CapacitorConfig = {
   appId: 'app.gansuni.player',
   appName: 'Gaansuni',
-  webDir: '../out',
+  webDir: 'out',
   server: {
     androidScheme: 'https',
-    cleartext: false,
+    cleartext: true,
   },
   plugins: {
     SplashScreen: {
@@ -17,7 +17,7 @@ const config: CapacitorConfig = {
     },
   },
   android: {
-    allowMixedContent: false,
+    allowMixedContent: true,
     captureInput: true,
     hideLogs: false,
     webContentsDebuggingEnabled: true,
