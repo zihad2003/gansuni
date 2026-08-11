@@ -9,6 +9,7 @@ function jsonResponse(data, status = 200) {
     status,
     headers: {
       'Content-Type': 'application/json',
+      'Cache-Control': 'public, max-age=1800, s-maxage=3600',
       ...CORS_HEADERS,
     },
   })
@@ -24,8 +25,6 @@ const PIPED_INSTANCES = [
   'https://piped-api.garudalinux.org',
   'https://pipedapi.adminforge.de',
   'https://pipedapi.silkky.cloud',
-  'https://pipedapi.mha.fi',
-  'https://piped-api.lunar.icu',
 ]
 
 const INVIDIOUS_INSTANCES = [
@@ -33,10 +32,83 @@ const INVIDIOUS_INSTANCES = [
   'https://invidious.privacyredirect.com',
   'https://iv.datura.network',
   'https://invidious.nerdvpn.de',
-  'https://inv.nadeko.net',
-  'https://invidious.drgns.space',
-  'https://inv.tux.pizza',
 ]
+
+/**
+  * Official YouTube Data API v3 Search
+  */
+async function searchOfficialYouTubeApi(query, limit, apiKey) {
+  try {
+    const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&q=${encodeURIComponent(
+      query
+    )}&maxResults=${limit}&key=${apiKey}`
+    const res = await fetch(url, { signal: AbortSignal.timeout(7000) })
+    if (!res.ok) {
+      console.warn(`YouTube API v3 returned status ${res.status}`)
+      return null
+    }
+    const data = await res.json()
+    const items = data?.items || []
+    if (!items.length) return null
+
+    return items
+      .filter((item) => item.id && item.id.videoId)
+      .map((item) => {
+        const videoId = item.id.videoId
+        const snippet = item.snippet || {}
+        const title = snippet.title || 'YouTube Track'
+        const artistName = snippet.channelTitle || 'YouTube Creator'
+        const coverArtUrl =
+          snippet.thumbnails?.high?.url ||
+          snippet.thumbnails?.medium?.url ||
+          `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`
+
+        return {
+          id: `yt_${videoId}`,
+          youtubeId: videoId,
+          title,
+          slug: title.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+          artistId: `yt_artist_${videoId}`,
+          artist: {
+            id: `yt_artist_${videoId}`,
+            name: artistName,
+            slug: artistName.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+            bio: `YouTube Creator: ${artistName}`,
+            avatarUrl: coverArtUrl,
+            verified: true,
+            monthlyListeners: 1500000,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          },
+          albumId: `yt_album_${videoId}`,
+          album: {
+            id: `yt_album_${videoId}`,
+            title: `${title} (Single)`,
+            slug: `${title}-single`.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+            artistId: `yt_artist_${videoId}`,
+            coverArtUrl,
+            totalTracks: 1,
+            durationMs: 210000,
+            albumType: 'SINGLE',
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          },
+          audioUrl: `/api/stream?videoId=${videoId}&redirect=1`,
+          durationMs: 210000,
+          trackNumber: 1,
+          discNumber: 1,
+          explicit: false,
+          playCount: 1500000,
+          isPremium: false,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        }
+      })
+  } catch (err) {
+    console.warn('YouTube API v3 search failed:', err?.message)
+    return null
+  }
+}
 
 async function searchPipedYouTube(query, limit = 20) {
   for (const instance of PIPED_INSTANCES) {
@@ -45,7 +117,7 @@ async function searchPipedYouTube(query, limit = 20) {
         `${instance}/search?q=${encodeURIComponent(query)}&filter=music_songs`,
         {
           headers: { Accept: 'application/json' },
-          signal: AbortSignal.timeout(6000),
+          signal: AbortSignal.timeout(5000),
         }
       )
       if (!res.ok) continue
@@ -123,7 +195,7 @@ async function searchInvidiousYouTube(query, limit = 20) {
         `${instance}/api/v1/search?q=${encodeURIComponent(query)}&type=video`,
         {
           headers: { Accept: 'application/json' },
-          signal: AbortSignal.timeout(6000),
+          signal: AbortSignal.timeout(5000),
         }
       )
       if (!res.ok) continue
@@ -199,7 +271,7 @@ async function searchYouTubeScrape(query, limit = 20) {
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
           'Accept-Language': 'en-US,en;q=0.9',
         },
-        signal: AbortSignal.timeout(6000),
+        signal: AbortSignal.timeout(5000),
       }
     )
     if (!res.ok) return null
@@ -262,26 +334,54 @@ async function searchYouTubeScrape(query, limit = 20) {
 
 export async function onRequestGet(context) {
   try {
+    // Cloudflare Cache API lookup
+    const cache = typeof caches !== 'undefined' ? caches.default : null
+    if (cache) {
+      const cachedResponse = await cache.match(context.request)
+      if (cachedResponse) return cachedResponse
+    }
+
     const url = new URL(context.request.url)
     const query = url.searchParams.get('q') || url.searchParams.get('query') || 'Coke Studio Bangla'
     const limit = Math.min(30, parseInt(url.searchParams.get('limit') || '20', 10))
+    const apiKey = context?.env?.YOUTUBE_API_KEY
 
-    let tracks = await searchPipedYouTube(query, limit)
+    let tracks = null
+    let source = 'YouTube Data API v3'
+
+    if (apiKey) {
+      tracks = await searchOfficialYouTubeApi(query, limit, apiKey)
+    }
+
     if (!tracks || !tracks.length) {
+      source = 'Piped Mirror'
+      tracks = await searchPipedYouTube(query, limit)
+    }
+
+    if (!tracks || !tracks.length) {
+      source = 'Invidious Mirror'
       tracks = await searchInvidiousYouTube(query, limit)
     }
+
     if (!tracks || !tracks.length) {
+      source = 'YouTube Scrape Fallback'
       tracks = await searchYouTubeScrape(query, limit)
     }
 
     if (!tracks) tracks = []
 
-    return jsonResponse({
+    const response = jsonResponse({
       query,
-      source: 'YouTube Live Search Engine',
+      source,
       count: tracks.length,
       tracks,
     })
+
+    if (cache && tracks.length > 0) {
+      context.waitUntil(cache.put(context.request, response.clone()))
+    }
+
+    return response
   } catch (error) {
     return jsonResponse({ error: error?.message || 'Failed to fetch YouTube live search' }, 500)
   }

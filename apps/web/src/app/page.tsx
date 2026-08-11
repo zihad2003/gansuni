@@ -12,6 +12,7 @@ import { HeaderNav } from '@/components/HeaderNav'
 
 export default function HomePage(): ReactNode {
   const [userUploadedTracks, setUserUploadedTracks] = useState<any[]>([])
+  const [catalogTracks, setCatalogTracks] = useState<any[]>([])
   const [liveTracks, setLiveTracks] = useState<any[]>([])
 
   const play = useAudioPlayer((s) => s.play)
@@ -26,6 +27,7 @@ export default function HomePage(): ReactNode {
       .then((res) => res.json())
       .then((data) => {
         if (data.userTracks) setUserUploadedTracks(data.userTracks)
+        if (data.allTracks) setCatalogTracks(data.allTracks)
       })
       .catch(() => {})
 
@@ -39,7 +41,7 @@ export default function HomePage(): ReactNode {
       .catch(() => {})
   }, [])
 
-  const allAvailableTracks = [...userUploadedTracks, ...liveTracks, ...playedHistory]
+  const allAvailableTracks = [...userUploadedTracks, ...catalogTracks, ...liveTracks, ...playedHistory]
 
   const onPlayTrack = (track: any, trackList: any[]) => {
     const idx = trackList.findIndex((t) => t.id === track.id)
@@ -193,6 +195,48 @@ export default function HomePage(): ReactNode {
                           <div>
                             <div className="text-sm font-bold truncate text-white">{t.title}</div>
                             <div className="text-xs text-amber-400 truncate mt-0.5">{t.artist?.name}</div>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </section>
+              )}
+
+              {/* FEATURED CATALOG SONGS */}
+              {catalogTracks.length > 0 && (
+                <section>
+                  <SectionHeader title="Featured Catalog Songs" />
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 sm:gap-4">
+                    {catalogTracks.map((t) => {
+                      const playing = isCurrentPlaying(t.id)
+                      const liked = likedTrackIds.includes(t.id)
+                      return (
+                        <div
+                          key={t.id}
+                          onClick={() => onPlayTrack(t, catalogTracks)}
+                          className="group relative p-3 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all cursor-pointer flex flex-col justify-between"
+                        >
+                          <div className="relative aspect-square rounded-xl overflow-hidden mb-2 shadow-lg">
+                            <Image src={t.album?.coverArtUrl || ''} alt={t.title} fill sizes="180px" className="object-cover transition-transform group-hover:scale-105" />
+                            <div className={`absolute inset-0 bg-black/40 flex items-center justify-center transition-opacity ${playing ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                              <div className="w-10 h-10 rounded-full bg-[#F59E0B] text-black flex items-center justify-center shadow-lg">
+                                {playing ? <EqualizerAnim /> : <Play size={18} fill="#000" strokeWidth={0} className="ml-0.5" />}
+                              </div>
+                            </div>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                toggleLikeTrack(t as any)
+                              }}
+                              className="absolute top-2 right-2 p-1.5 rounded-full bg-black/50 text-white/80 hover:text-[#F59E0B] transition-colors"
+                            >
+                              <Heart size={14} fill={liked ? '#F59E0B' : 'none'} color={liked ? '#F59E0B' : 'currentColor'} />
+                            </button>
+                          </div>
+                          <div>
+                            <div className="text-sm font-bold truncate text-white">{t.title}</div>
+                            <div className="text-xs text-white/60 truncate mt-0.5">{t.artist?.name}</div>
                           </div>
                         </div>
                       )

@@ -57,7 +57,8 @@ lerna-debug.log*
 .idea/
 
 # TypeScript
-*.tsbuildinfo
+# Cloudflare Wrangler
+.wrangler/
 
 # Expo Web
 node_modules/expo-router/entry

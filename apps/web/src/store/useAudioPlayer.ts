@@ -15,12 +15,7 @@ import type { Track } from '@gansuni/shared'
 
 type PlayerSlice = PlayerState & PlayerActions
 
-const FALLBACK_AUDIO_URLS = [
-  'https://raw.githubusercontent.com/mdn/webaudio-examples/main/audio-analyser/vibes.mp3',
-  'https://commondatastorage.googleapis.com/codeskulptor-demos/DinoJazz.mp3',
-  'https://commondatastorage.googleapis.com/codeskulptor-assets/sounddogs/soundtrack.mp3',
-  'https://raw.githubusercontent.com/rafaelreis-hotmart/Audio-Sample-files/main/sample.mp3',
-]
+
 
 interface InternalState {
   likedTrackIds: string[]
@@ -236,8 +231,8 @@ export const useAudioPlayer = create<PlayerSlice & InternalState>((set, get) => 
         try {
           targetUrl = await get()._resolveAudioUrl(track)
         } catch (e: any) {
-          const fallbackIndex = Math.abs(track.id.length) % FALLBACK_AUDIO_URLS.length
-          targetUrl = FALLBACK_AUDIO_URLS[fallbackIndex]!
+          set({ playbackState: 'error', error: 'Audio stream unavailable for this track.' })
+          return
         }
       }
       if (targetUrl.startsWith('http:')) {
@@ -259,15 +254,7 @@ export const useAudioPlayer = create<PlayerSlice & InternalState>((set, get) => 
           await audio.play()
           set({ playbackState: 'playing', error: null, _retryCount: 0 })
         } catch (err2: any) {
-          const fallbackIndex = Math.abs(track.id.length) % FALLBACK_AUDIO_URLS.length
-          const fallbackUrl = FALLBACK_AUDIO_URLS[fallbackIndex]!
-          audio.src = fallbackUrl
-          try {
-            await audio.play()
-            set({ playbackState: 'playing', error: null, _retryCount: 0 })
-          } catch {
-            set({ playbackState: 'paused', error: 'Stream unavailable. Try another track.' })
-          }
+          set({ playbackState: 'error', error: 'Audio stream playback failed. Click retry or try another track.' })
         }
       }
       return
@@ -280,14 +267,7 @@ export const useAudioPlayer = create<PlayerSlice & InternalState>((set, get) => 
         await audio.play()
         set({ playbackState: 'playing', error: null })
       } catch (e: any) {
-        try {
-          const fallbackUrl = FALLBACK_AUDIO_URLS[0]!
-          audio.src = fallbackUrl
-          await audio.play()
-          set({ playbackState: 'playing', error: null })
-        } catch (err: any) {
-          set({ playbackState: 'paused' })
-        }
+        set({ playbackState: 'error', error: 'Stream playback failed.' })
       }
     }
   },

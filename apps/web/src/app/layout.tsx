@@ -6,7 +6,10 @@ import { Toaster } from 'sonner'
 import './globals.css'
 
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://gaansuni.pages.dev'
+
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: {
     default: 'Gaansuni | Music Streaming',
     template: '%s | Gaansuni',
@@ -38,7 +41,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'en_US',
-    url: 'https://gansuni.app',
+    url: SITE_URL,
     siteName: 'Gaansuni',
     title: 'Gaansuni | Music Streaming',
     description: 'Stream music, playlists, and full-length tracks on Gaansuni.',
@@ -55,7 +58,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Gaansuni — Stream & Listen to Music',
     description: 'Discover, stream, and download your favorite Bangla music.',
-    images: ['https://gansuni.app/og.png'],
+    images: [`${SITE_URL}/og-image.png`],
   },
   robots: {
     index: true,

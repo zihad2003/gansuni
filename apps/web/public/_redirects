@@ -1,4 +1,3 @@
-/album/* /album/default/index.html 200
-/artist/* /artist/default/index.html 200
-/playlist/* /playlist/default/index.html 200
-/* /404.html 404
+/album/* /album/default 200
+/artist/* /artist/default 200
+/playlist/* /playlist/default 200

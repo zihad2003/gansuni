@@ -9,6 +9,7 @@ function jsonResponse(data, status = 200) {
     status,
     headers: {
       'Content-Type': 'application/json',
+      'Cache-Control': 'public, max-age=14400, s-maxage=86400',
       ...CORS_HEADERS,
     },
   })
@@ -51,14 +52,14 @@ async function tryPipedStream(baseUrl, videoId) {
   const streamUrl = `${baseUrl}/streams/${videoId}`
   const res = await fetch(streamUrl, {
     headers: { Accept: 'application/json' },
-    signal: AbortSignal.timeout(8000),
+    signal: AbortSignal.timeout(6000),
   })
   if (!res.ok) throw new Error(`Piped ${baseUrl} returned ${res.status}`)
   const data = await res.json()
   const audioStreams = data?.audioStreams || []
   if (!audioStreams.length) throw new Error('No audio streams from Piped')
   audioStreams.sort((a, b) => (b.bitrate || 0) - (a.bitrate || 0))
-  const best = audioStreams.find(s => s.mimeType?.startsWith('audio/')) || audioStreams[0]
+  const best = audioStreams.find((s) => s.mimeType?.startsWith('audio/')) || audioStreams[0]
   if (!best?.url) throw new Error('No audio URL in Piped stream')
   return {
     title: data.title || 'YouTube Audio',
@@ -74,12 +75,12 @@ async function tryInvidiousStream(baseUrl, videoId) {
   const streamUrl = `${baseUrl}/api/v1/videos/${videoId}?fields=title,author,lengthSeconds,adaptiveFormats`
   const res = await fetch(streamUrl, {
     headers: { Accept: 'application/json' },
-    signal: AbortSignal.timeout(8000),
+    signal: AbortSignal.timeout(6000),
   })
   if (!res.ok) throw new Error(`Invidious ${baseUrl} returned ${res.status}`)
   const data = await res.json()
   const audioFormats = (data.adaptiveFormats || []).filter(
-    f => f.type?.startsWith('audio/') && f.url
+    (f) => f.type?.startsWith('audio/') && f.url
   )
   if (!audioFormats.length) throw new Error('No audio formats from Invidious')
   audioFormats.sort((a, b) => (b.bitrate || 0) - (a.bitrate || 0))
@@ -107,7 +108,7 @@ async function tryCobaltApi(videoId) {
       audioFormat: 'mp3',
       audioQuality: '320',
     }),
-    signal: AbortSignal.timeout(12000),
+    signal: AbortSignal.timeout(8000),
   })
   if (!res.ok) throw new Error(`Cobalt returned ${res.status}`)
   const data = await res.json()
@@ -131,7 +132,7 @@ async function searchYouTubeId(query) {
     try {
       const res = await fetch(
         `${instance}/search?q=${encodeURIComponent(query)}&filter=music_songs`,
-        { headers: { Accept: 'application/json' }, signal: AbortSignal.timeout(8000) }
+        { headers: { Accept: 'application/json' }, signal: AbortSignal.timeout(5000) }
       )
       if (!res.ok) continue
       const data = await res.json()
@@ -147,7 +148,7 @@ async function searchYouTubeId(query) {
     try {
       const res = await fetch(
         `${instance}/api/v1/search?q=${encodeURIComponent(query)}&type=video&fields=videoId,title`,
-        { headers: { Accept: 'application/json' }, signal: AbortSignal.timeout(8000) }
+        { headers: { Accept: 'application/json' }, signal: AbortSignal.timeout(5000) }
       )
       if (!res.ok) continue
       const data = await res.json()
@@ -180,45 +181,36 @@ async function resolveAudioForVideoId(videoId) {
   } catch (e) {
     errors.push(`Cobalt: ${e.message}`)
   }
-  throw new Error(`All extractors failed: ${errors.join(' | ')}`)
+  throw new Error(`All audio extraction services failed: ${errors.join(' | ')}`)
 }
-
-const FALLBACK_STREAMS = [
-  'https://raw.githubusercontent.com/mdn/webaudio-examples/main/audio-analyser/vibes.mp3',
-  'https://commondatastorage.googleapis.com/codeskulptor-demos/DinoJazz.mp3',
-  'https://commondatastorage.googleapis.com/codeskulptor-assets/sounddogs/soundtrack.mp3',
-]
 
 export async function onRequestGet(context) {
   try {
+    const cache = typeof caches !== 'undefined' ? caches.default : null
+    if (cache) {
+      const cachedResponse = await cache.match(context.request)
+      if (cachedResponse) return cachedResponse
+    }
+
     const url = new URL(context.request.url)
     const query = url.searchParams.get('q') || url.searchParams.get('query')
-    const videoId = url.searchParams.get('videoId') || url.searchParams.get('v') || url.searchParams.get('id')
+    let videoId = url.searchParams.get('videoId') || url.searchParams.get('v') || url.searchParams.get('id')
 
     if (!query && !videoId) {
       return jsonResponse({ error: 'Missing query or videoId parameter' }, 400)
     }
 
-    let targetVideoId = videoId
-    if (!targetVideoId && query) {
+    if (!videoId && query) {
       const cleanQuery = cleanSearchQuery(query)
-      targetVideoId = await searchYouTubeId(cleanQuery)
+      videoId = await searchYouTubeId(cleanQuery)
     }
 
-    if (!targetVideoId) {
-      const fallbackIndex = Math.abs((query || 'fallback').length) % FALLBACK_STREAMS.length
-      return jsonResponse({
-        title: query || 'Fallback Track',
-        artist: 'Gaansuni Artist',
-        durationMs: 240000,
-        audioUrl: FALLBACK_STREAMS[fallbackIndex],
-        quality: '320kbps',
-        source: 'fallback',
-      })
+    if (!videoId) {
+      return jsonResponse({ error: 'Video stream could not be identified for query' }, 404)
     }
 
     try {
-      const result = await resolveAudioForVideoId(targetVideoId)
+      const result = await resolveAudioForVideoId(videoId)
       if (result) {
         if (result.audioUrl.startsWith('http:')) {
           result.audioUrl = result.audioUrl.replace(/^http:/i, 'https:')
@@ -228,23 +220,27 @@ export async function onRequestGet(context) {
             status: 302,
             headers: {
               Location: result.audioUrl,
+              'Cache-Control': 'public, max-age=14400, s-maxage=86400',
               ...CORS_HEADERS,
             },
           })
         }
-        return jsonResponse(result)
+
+        const response = jsonResponse(result)
+        if (cache) {
+          context.waitUntil(cache.put(context.request, response.clone()))
+        }
+        return response
       }
     } catch (resolveErr) {
-      console.warn('YouTube resolve failed:', resolveErr.message)
-      const fallbackIndex = Math.abs(targetVideoId.length) % FALLBACK_STREAMS.length
-      return jsonResponse({
-        title: query || 'YouTube Track',
-        artist: 'Gaansuni Artist',
-        durationMs: 210000,
-        audioUrl: FALLBACK_STREAMS[fallbackIndex],
-        quality: '320kbps',
-        source: 'fallback',
-      })
+      console.warn('Audio stream resolution failed:', resolveErr.message)
+      return jsonResponse(
+        {
+          error: 'Audio stream resolution failed. Public extractors rate limited or blocked.',
+          details: resolveErr.message,
+        },
+        502
+      )
     }
   } catch (error) {
     return jsonResponse({ error: error?.message || 'Failed to resolve stream' }, 500)
