@@ -98,7 +98,7 @@ export default function SearchPage(): ReactNode {
               {query.trim() && (
                 <div className="text-sm text-white/60 flex items-center gap-2">
                   {isSearching && <Loader2 size={16} className="animate-spin text-[#F59E0B]" />}
-                  <span>Found <span className="font-semibold text-white">{displayTracks.length}</span> live tracks for <span className="font-semibold text-white">"{query}"</span>:</span>
+                  <span>Found <span className="font-semibold text-white">{displayTracks.length}</span> live tracks for <span className="font-semibold text-white">&quot;{query}&quot;</span>:</span>
                 </div>
               )}
 

@@ -105,7 +105,7 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps): ReactNode {
             </div>
             <h2 className="text-2xl font-black text-white">Track Uploaded Successfully!</h2>
             <p className="text-sm text-white/70 mt-1">
-              "{uploadedTrack.title}" by {uploadedTrack.artist?.name} is ready for playback.
+              &quot;{uploadedTrack.title}&quot; by {uploadedTrack.artist?.name} is ready for playback.
             </p>
 
             <div className="mt-6 flex justify-center gap-3">
