@@ -46,6 +46,7 @@ const withPWA = require('next-pwa')({
 })
 
 const nextConfig = withPWA({
+  output: 'export',
   reactStrictMode: true,
   poweredByHeader: false,
   trailingSlash: true,
