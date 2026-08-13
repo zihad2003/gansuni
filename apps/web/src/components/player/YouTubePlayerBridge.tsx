@@ -10,7 +10,7 @@ declare global {
   }
 }
 
-export function YouTubePlayerBridge() {
+export function YouTubePlayerBridge(): JSX.Element {
   const playerRef = useRef<any>(null)
   const isReadyRef = useRef<boolean>(false)
   const intervalRef = useRef<any>(null)
