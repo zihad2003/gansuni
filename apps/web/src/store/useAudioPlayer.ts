@@ -143,21 +143,31 @@ export const useAudioPlayer = create<PlayerSlice & InternalState>((set, get) => 
 
     audio.addEventListener('error', async () => {
       const s = get()
-      const err = audio.error
-      console.warn('Audio playback error:', err?.message, err?.code)
-      if (s._retryCount < MAX_RETRIES && s.currentTrack) {
-        const nextRetry = s._retryCount + 1
-        set({ _retryCount: nextRetry, playbackState: 'loading', error: `Retrying stream (${nextRetry}/${MAX_RETRIES})...` })
+      const track = s.currentTrack
+      if (!track) return
+
+      const videoId = track.youtubeId || track.id.replace(/^yt_/, '')
+      const FALLBACK_SERVERS = [
+        'https://inv.nadeko.net',
+        'https://inv.tux.pizza',
+        'https://invidious.flokinet.to',
+        'https://yewtu.be',
+      ]
+
+      const currentRetry = s._retryCount || 0
+      if (currentRetry < FALLBACK_SERVERS.length) {
+        const nextServer = FALLBACK_SERVERS[currentRetry]
+        const fallbackUrl = `${nextServer}/latest_version?id=${videoId}&itag=251`
+        set({ _retryCount: currentRetry + 1, playbackState: 'loading' })
+        audio.src = fallbackUrl
         try {
-          const resolvedUrl = await s._resolveAudioUrl(s.currentTrack)
-          audio.src = resolvedUrl
           await audio.play()
           set({ playbackState: 'playing', error: null, _retryCount: 0 })
         } catch {
-          set({ playbackState: 'error', error: 'Stream resolution failed. Click retry.' })
+          // Triggers next error retry step automatically
         }
       } else {
-        set({ playbackState: 'error', error: 'Playback failed. Click retry or skip.' })
+        set({ playbackState: 'error', error: 'Playback failed. Tap to retry.' })
       }
     })
 
@@ -237,15 +247,14 @@ export const useAudioPlayer = create<PlayerSlice & InternalState>((set, get) => 
       }))
 
       const videoId = track.youtubeId || (track.id?.startsWith('yt_') ? track.id.replace(/^yt_/, '') : null)
-      const isYTTrack = Boolean(videoId)
-
-      if (isYTTrack) {
-        audio.pause()
-        set({ playbackState: 'playing', error: null, _retryCount: 0 })
-        return
-      }
 
       let targetUrl = track.audioUrl || ''
+      if (!targetUrl || targetUrl.startsWith('/api/stream') || targetUrl.includes('/api/stream')) {
+        if (videoId) {
+          targetUrl = `https://yewtu.be/latest_version?id=${videoId}&itag=251`
+        }
+      }
+
       if (targetUrl.startsWith('http:')) {
         targetUrl = targetUrl.replace(/^http:/i, 'https:')
       }
@@ -259,7 +268,16 @@ export const useAudioPlayer = create<PlayerSlice & InternalState>((set, get) => 
         await audio.play()
         set({ playbackState: 'playing', error: null, _retryCount: 0 })
       } catch (e: any) {
-        console.warn('Primary audio.play failed:', e)
+        console.warn('Primary audio.play failed, retrying failover:', e)
+        if (videoId) {
+          const fallbackUrl = `https://inv.nadeko.net/latest_version?id=${videoId}&itag=251`
+          audio.src = fallbackUrl
+          try {
+            await audio.play()
+            set({ playbackState: 'playing', error: null, _retryCount: 0 })
+            return
+          } catch {}
+        }
         set({ playbackState: 'error', error: 'Audio stream playback failed.' })
       }
       return
