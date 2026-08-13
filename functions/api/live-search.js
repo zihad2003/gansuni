@@ -20,8 +20,8 @@ export async function onRequestOptions() {
 }
 
 const INVIDIOUS_INSTANCES = [
-  'https://yewtu.be',
   'https://inv.nadeko.net',
+  'https://yewtu.be',
   'https://inv.tux.pizza',
   'https://invidious.flokinet.to',
 ]
@@ -112,8 +112,7 @@ async function searchYouTubeScrape(query, limit = 20) {
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
           },
-          audioUrl: `https://yewtu.be/latest_version?id=${videoId}&itag=251`,
-          fallbackAudioUrl: `https://inv.tux.pizza/latest_version?id=${videoId}&itag=251`,
+          audioUrl: `/api/stream?videoId=${videoId}`,
           durationMs,
           trackNumber: 1,
           discNumber: 1,
@@ -189,8 +188,7 @@ async function searchInvidiousYouTube(query, limit = 20) {
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
           },
-          audioUrl: `${instance}/latest_version?id=${videoId}&itag=251`,
-          fallbackAudioUrl: `https://inv.tux.pizza/latest_version?id=${videoId}&itag=251`,
+          audioUrl: `/api/stream?videoId=${videoId}`,
           durationMs,
           trackNumber: 1,
           discNumber: 1,

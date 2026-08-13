@@ -3,14 +3,16 @@ import { NextRequest, NextResponse } from 'next/server'
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, Range',
 }
 
 const INVIDIOUS_INSTANCES = [
-  'https://yewtu.be',
   'https://inv.nadeko.net',
+  'https://yewtu.be',
   'https://inv.tux.pizza',
   'https://invidious.flokinet.to',
+  'https://iv.melmac.space',
+  'https://invidious.fdn.fr',
 ]
 
 const FALLBACK_AUDIO_URLS: Record<string, string> = {
@@ -21,21 +23,10 @@ const FALLBACK_AUDIO_URLS: Record<string, string> = {
   'jR_5908N3kE': 'https://cdn.pixabay.com/download/audio/2021/08/09/audio_884325752c.mp3',
 }
 
-function cleanSearchQuery(raw: string) {
-  return raw
-    .replace(/\[.*?\]|\(.*?\)/g, '')
-    .replace(/official\s*(music\s*video|video|audio|lyric\s*video|lyrical)?/gi, '')
-    .replace(/\b(hd|4k|1080p|full\s*song|remix|cover|prod\b)/gi, '')
-    .replace(/\s+/g, ' ')
-    .trim()
-}
-
-async function resolveAudioForVideoId(videoId: string) {
-  // Strategy 1: Test Invidious Instances for Video Title & Details
+async function resolveDirectAudioUrl(videoId: string): Promise<string | null> {
   for (const instance of INVIDIOUS_INSTANCES) {
     try {
-      const streamUrl = `${instance}/api/v1/videos/${videoId}`
-      const res = await fetch(streamUrl, {
+      const res = await fetch(`${instance}/api/v1/videos/${videoId}`, {
         headers: {
           'User-Agent':
             'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
@@ -45,28 +36,24 @@ async function resolveAudioForVideoId(videoId: string) {
       })
       if (!res.ok) continue
       const data = await res.json()
-      const audioUrl = `${instance}/latest_version?id=${videoId}&itag=251`
-      return {
-        title: data.title || 'YouTube Audio',
-        artist: data.author || 'YouTube Artist',
-        durationMs: (data.lengthSeconds || 210) * 1000,
-        audioUrl,
-        quality: '320kbps',
-        source: 'invidious-proxy',
-      }
-    } catch (e: any) {}
-  }
+      const adaptive = data.adaptiveFormats || []
+      const audioFormats = adaptive.filter((f: any) => {
+        const mime = (f.mimeType || f.type || f.container || '').toLowerCase()
+        return mime.includes('audio') || mime.includes('webm') || mime.includes('m4a') || mime.includes('mp4')
+      })
 
-  // Strategy 2: Direct Reliable Audio Stream Proxy
-  const primaryInstance = INVIDIOUS_INSTANCES[0]
-  return {
-    title: 'YouTube Audio Stream',
-    artist: 'YouTube Musician',
-    durationMs: 210000,
-    audioUrl: `${primaryInstance}/latest_version?id=${videoId}&itag=251`,
-    quality: '320kbps',
-    source: 'invidious-direct-proxy',
+      if (!audioFormats.length) continue
+      audioFormats.sort((a: any, b: any) => parseInt(b.bitrate || '0', 10) - parseInt(a.bitrate || '0', 10))
+      const best = audioFormats[0]
+      let audioUrl = best.url || best.audioUrl || ''
+      if (!audioUrl) continue
+      if (audioUrl.startsWith('/')) {
+        audioUrl = `${instance}${audioUrl}`
+      }
+      return audioUrl
+    } catch {}
   }
+  return null
 }
 
 export async function OPTIONS() {
@@ -77,42 +64,53 @@ export async function GET(request: NextRequest) {
   try {
     const url = new URL(request.url)
     let videoId = url.searchParams.get('videoId') || url.searchParams.get('v') || url.searchParams.get('id')
-    const query = url.searchParams.get('q') || url.searchParams.get('query')
-
-    if (!query && !videoId) {
-      return NextResponse.json(
-        { error: 'Missing query or videoId parameter' },
-        { status: 400, headers: CORS_HEADERS }
-      )
-    }
 
     if (!videoId) {
       videoId = '6w97fN5c44E'
     }
 
-    const result = await resolveAudioForVideoId(videoId)
+    const rangeHeader = request.headers.get('range')
+    const directAudioUrl = await resolveDirectAudioUrl(videoId)
 
-    const isRedirect = url.searchParams.get('redirect') === '1' || url.searchParams.get('direct') === '1'
-    if (isRedirect) {
-      return NextResponse.redirect(result.audioUrl, {
-        status: 302,
-        headers: CORS_HEADERS,
-      })
+    const targetUrl = directAudioUrl || FALLBACK_AUDIO_URLS[videoId] || 'https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3'
+
+    const fetchHeaders: Record<string, string> = {
+      'User-Agent':
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+    }
+    if (rangeHeader) {
+      fetchHeaders['Range'] = rangeHeader
     }
 
-    return NextResponse.json(result, { headers: CORS_HEADERS })
+    const audioRes = await fetch(targetUrl, {
+      headers: fetchHeaders,
+      signal: AbortSignal.timeout(10000),
+    })
+
+    if (!audioRes.ok && audioRes.status !== 206) {
+      // Fallback redirect if streaming fetch returns non-200
+      return NextResponse.redirect(targetUrl, { status: 302, headers: CORS_HEADERS })
+    }
+
+    const responseHeaders = new Headers(CORS_HEADERS)
+    responseHeaders.set('Content-Type', audioRes.headers.get('content-type') || 'audio/webm')
+    if (audioRes.headers.get('content-length')) {
+      responseHeaders.set('Content-Length', audioRes.headers.get('content-length')!)
+    }
+    if (audioRes.headers.get('content-range')) {
+      responseHeaders.set('Content-Range', audioRes.headers.get('content-range')!)
+    }
+    responseHeaders.set('Accept-Ranges', 'bytes')
+    responseHeaders.set('Cache-Control', 'public, max-age=14400, s-maxage=86400')
+
+    return new NextResponse(audioRes.body, {
+      status: audioRes.status,
+      headers: responseHeaders,
+    })
   } catch (error: any) {
-    const defaultVideoId = '6w97fN5c44E'
     return NextResponse.json(
-      {
-        title: 'Bengali Audio Stream',
-        artist: 'Gansuni Artist',
-        durationMs: 210000,
-        audioUrl: `https://yewtu.be/latest_version?id=${defaultVideoId}&itag=251`,
-        quality: '320kbps',
-        source: 'fallback-proxy',
-      },
-      { headers: CORS_HEADERS }
+      { error: 'Stream error', message: error?.message },
+      { status: 500, headers: CORS_HEADERS }
     )
   }
 }
