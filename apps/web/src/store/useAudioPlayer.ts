@@ -237,17 +237,15 @@ export const useAudioPlayer = create<PlayerSlice & InternalState>((set, get) => 
       }))
 
       let targetUrl = track.audioUrl || ''
+      const videoId = track.youtubeId || track.id.replace(/^yt_/, '')
+
       if (!targetUrl || targetUrl.startsWith('/api/stream') || targetUrl.includes('/api/stream')) {
-        try {
-          targetUrl = await get()._resolveAudioUrl(track)
-        } catch (e: any) {
-          set({ playbackState: 'error', error: 'Audio stream unavailable for this track.' })
-          return
-        }
+        targetUrl = (track as any).fallbackAudioUrl || `https://yewtu.be/latest_version?id=${videoId}&itag=251`
       }
       if (targetUrl.startsWith('http:')) {
         targetUrl = targetUrl.replace(/^http:/i, 'https:')
       }
+
       audio.src = targetUrl
       audio.currentTime = 0
       audio.volume = state.muted ? 0 : clampVolume(state.volume)
@@ -257,10 +255,10 @@ export const useAudioPlayer = create<PlayerSlice & InternalState>((set, get) => 
         await audio.play()
         set({ playbackState: 'playing', error: null, _retryCount: 0 })
       } catch (e: any) {
-        console.warn('Primary audio.play failed, retrying:', e)
+        console.warn('Primary audio.play failed, retrying fallback:', e)
+        const fallbackUrl = `https://inv.tux.pizza/latest_version?id=${videoId}&itag=251`
+        audio.src = fallbackUrl
         try {
-          const resolvedUrl = await get()._resolveAudioUrl(track)
-          audio.src = resolvedUrl
           await audio.play()
           set({ playbackState: 'playing', error: null, _retryCount: 0 })
         } catch (err2: any) {

@@ -7,18 +7,10 @@ const CORS_HEADERS = {
 }
 
 const INVIDIOUS_INSTANCES = [
-  'https://inv.nadeko.net',
   'https://yewtu.be',
+  'https://inv.nadeko.net',
   'https://inv.tux.pizza',
   'https://invidious.flokinet.to',
-  'https://iv.melmac.space',
-  'https://invidious.fdn.fr',
-]
-
-const PIPED_INSTANCES = [
-  'https://pipedapi.adminforge.de',
-  'https://pipedapi.mha.fi',
-  'https://pipedapi.kavin.rocks',
 ]
 
 async function searchYouTubeScrape(query: string, limit = 20) {
@@ -107,7 +99,8 @@ async function searchYouTubeScrape(query: string, limit = 20) {
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
           },
-          audioUrl: `/api/stream?videoId=${videoId}&redirect=1`,
+          audioUrl: `https://yewtu.be/latest_version?id=${videoId}&itag=251`,
+          fallbackAudioUrl: `https://inv.tux.pizza/latest_version?id=${videoId}&itag=251`,
           durationMs,
           trackNumber: 1,
           discNumber: 1,
@@ -183,7 +176,8 @@ async function searchInvidiousYouTube(query: string, limit = 20) {
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
           },
-          audioUrl: `/api/stream?videoId=${videoId}&redirect=1`,
+          audioUrl: `${instance}/latest_version?id=${videoId}&itag=251`,
+          fallbackAudioUrl: `https://inv.tux.pizza/latest_version?id=${videoId}&itag=251`,
           durationMs,
           trackNumber: 1,
           discNumber: 1,
@@ -213,11 +207,9 @@ export async function GET(request: NextRequest) {
     const query = url.searchParams.get('q') || url.searchParams.get('query') || 'Rabindra Sangeet'
     const limit = Math.min(30, parseInt(url.searchParams.get('limit') || '20', 10))
 
-    // Strategy 1: High-reliability direct YouTube Scraper
     let tracks = await searchYouTubeScrape(query, limit)
     let source = 'YouTube Live Engine'
 
-    // Strategy 2: Invidious Mirror
     if (!tracks || !tracks.length) {
       source = 'Invidious Mirror'
       tracks = await searchInvidiousYouTube(query, limit)

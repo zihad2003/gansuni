@@ -20,12 +20,10 @@ export async function onRequestOptions() {
 }
 
 const INVIDIOUS_INSTANCES = [
-  'https://inv.nadeko.net',
   'https://yewtu.be',
+  'https://inv.nadeko.net',
   'https://inv.tux.pizza',
   'https://invidious.flokinet.to',
-  'https://iv.melmac.space',
-  'https://invidious.fdn.fr',
 ]
 
 async function searchYouTubeScrape(query, limit = 20) {
@@ -60,14 +58,16 @@ async function searchYouTubeScrape(query, limit = 20) {
         const videoId = v.videoId
         if (!videoId || typeof videoId !== 'string') continue
 
-        const title =
+        const title = String(
           v.title?.runs?.[0]?.text ||
           v.title?.accessibility?.accessibilityData?.label ||
           `${query} Track ${tracks.length + 1}`
-        const artistName =
+        )
+        const artistName = String(
           v.ownerText?.runs?.[0]?.text ||
           v.shortBylineText?.runs?.[0]?.text ||
           'YouTube Creator'
+        )
 
         const durationText = v.lengthText?.simpleText || '3:30'
         const parts = durationText.split(':').map((p) => parseInt(p, 10))
@@ -112,7 +112,8 @@ async function searchYouTubeScrape(query, limit = 20) {
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
           },
-          audioUrl: `/api/stream?videoId=${videoId}&redirect=1`,
+          audioUrl: `https://yewtu.be/latest_version?id=${videoId}&itag=251`,
+          fallbackAudioUrl: `https://inv.tux.pizza/latest_version?id=${videoId}&itag=251`,
           durationMs,
           trackNumber: 1,
           discNumber: 1,
@@ -188,7 +189,8 @@ async function searchInvidiousYouTube(query, limit = 20) {
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
           },
-          audioUrl: `/api/stream?videoId=${videoId}&redirect=1`,
+          audioUrl: `${instance}/latest_version?id=${videoId}&itag=251`,
+          fallbackAudioUrl: `https://inv.tux.pizza/latest_version?id=${videoId}&itag=251`,
           durationMs,
           trackNumber: 1,
           discNumber: 1,
