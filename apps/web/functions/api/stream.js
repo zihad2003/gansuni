@@ -19,20 +19,22 @@ export async function onRequestOptions() {
   return new Response(null, { status: 204, headers: CORS_HEADERS })
 }
 
+const INVIDIOUS_INSTANCES = [
+  'https://yewtu.be',
+  'https://inv.nadeko.net',
+  'https://inv.tux.pizza',
+  'https://invidious.flokinet.to',
+  'https://iv.melmac.space',
+  'https://invidious.fdn.fr',
+  'https://invidious.perennialworks.net',
+  'https://yt.artemislena.eu',
+]
+
 const PIPED_INSTANCES = [
   'https://pipedapi.adminforge.de',
   'https://pipedapi.mha.fi',
   'https://pipedapi.kavin.rocks',
   'https://api.piped.privacydev.net',
-]
-
-const INVIDIOUS_INSTANCES = [
-  'https://inv.nadeko.net',
-  'https://invidious.drgns.space',
-  'https://inv.tux.pizza',
-  'https://invidious.nerdvpn.de',
-  'https://yewtu.be',
-  'https://invidious.flokinet.to',
 ]
 
 const FALLBACK_AUDIO_URLS = {
@@ -52,11 +54,48 @@ function cleanSearchQuery(raw) {
     .trim()
 }
 
+async function tryInvidiousStream(baseUrl, videoId) {
+  const streamUrl = `${baseUrl}/api/v1/videos/${videoId}`
+  const res = await fetch(streamUrl, {
+    headers: {
+      'User-Agent':
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+      Accept: 'application/json',
+    },
+    signal: AbortSignal.timeout(4000),
+  })
+  if (!res.ok) throw new Error(`Invidious ${baseUrl} returned ${res.status}`)
+  const data = await res.json()
+  const adaptive = data.adaptiveFormats || []
+  const audioFormats = adaptive.filter((f) => {
+    const mime = (f.mimeType || f.type || f.container || '').toLowerCase()
+    return mime.includes('audio') || mime.includes('webm') || mime.includes('m4a') || mime.includes('mp4')
+  })
+
+  if (!audioFormats.length) throw new Error('No audio formats from Invidious')
+  audioFormats.sort((a, b) => parseInt(b.bitrate || '0', 10) - parseInt(a.bitrate || '0', 10))
+  const best = audioFormats[0]
+  let audioUrl = best.url || best.audioUrl || ''
+  if (!audioUrl) throw new Error('No URL in best audio format')
+  if (audioUrl.startsWith('/')) {
+    audioUrl = `${baseUrl}${audioUrl}`
+  }
+
+  return {
+    title: data.title || 'YouTube Audio',
+    artist: data.author || 'YouTube Artist',
+    durationMs: (data.lengthSeconds || 210) * 1000,
+    audioUrl,
+    quality: best.quality || '320kbps',
+    source: 'invidious',
+  }
+}
+
 async function tryPipedStream(baseUrl, videoId) {
   const streamUrl = `${baseUrl}/streams/${videoId}`
   const res = await fetch(streamUrl, {
     headers: { Accept: 'application/json' },
-    signal: AbortSignal.timeout(5000),
+    signal: AbortSignal.timeout(4000),
   })
   if (!res.ok) throw new Error(`Piped ${baseUrl} returned ${res.status}`)
   const data = await res.json()
@@ -75,56 +114,16 @@ async function tryPipedStream(baseUrl, videoId) {
   }
 }
 
-async function tryInvidiousStream(baseUrl, videoId) {
-  const streamUrl = `${baseUrl}/api/v1/videos/${videoId}?fields=title,author,lengthSeconds,adaptiveFormats`
-  const res = await fetch(streamUrl, {
-    headers: { Accept: 'application/json' },
-    signal: AbortSignal.timeout(5000),
-  })
-  if (!res.ok) throw new Error(`Invidious ${baseUrl} returned ${res.status}`)
-  const data = await res.json()
-  const audioFormats = (data.adaptiveFormats || []).filter(
-    (f) => f.type?.startsWith('audio/') && f.url
-  )
-  if (!audioFormats.length) throw new Error('No audio formats from Invidious')
-  audioFormats.sort((a, b) => (b.bitrate || 0) - (a.bitrate || 0))
-  const best = audioFormats[0]
-  return {
-    title: data.title || 'YouTube Audio',
-    artist: data.author || 'YouTube Artist',
-    durationMs: (data.lengthSeconds || 210) * 1000,
-    audioUrl: best.url,
-    quality: best.encoding || '320kbps',
-    source: 'invidious',
-  }
-}
-
 async function searchYouTubeId(query) {
-  for (const instance of INVIDIOUS_INSTANCES.slice(0, 3)) {
+  for (const instance of INVIDIOUS_INSTANCES) {
     try {
       const res = await fetch(
-        `${instance}/api/v1/search?q=${encodeURIComponent(query)}&type=video&fields=videoId,title`,
+        `${instance}/api/v1/search?q=${encodeURIComponent(query)}&type=video`,
         { headers: { Accept: 'application/json' }, signal: AbortSignal.timeout(4000) }
       )
       if (!res.ok) continue
       const data = await res.json()
       if (Array.isArray(data) && data[0]?.videoId) return data[0].videoId
-    } catch {}
-  }
-  for (const instance of PIPED_INSTANCES.slice(0, 3)) {
-    try {
-      const res = await fetch(
-        `${instance}/search?q=${encodeURIComponent(query)}&filter=music_songs`,
-        { headers: { Accept: 'application/json' }, signal: AbortSignal.timeout(4000) }
-      )
-      if (!res.ok) continue
-      const data = await res.json()
-      const item = data?.items?.[0]
-      if (item?.url) {
-        const match = item.url.match(/[?&]v=([^&]+)/)
-        if (match) return match[1]
-        if (item.url.startsWith('/watch?v=')) return item.url.replace('/watch?v=', '')
-      }
     } catch {}
   }
   return null
@@ -180,7 +179,8 @@ export async function onRequestGet(context) {
 
     if (!videoId && query) {
       const cleanQuery = cleanSearchQuery(query)
-      videoId = await searchYouTubeId(cleanQuery)
+      const foundId = await searchYouTubeId(cleanQuery)
+      if (foundId) videoId = foundId
     }
 
     if (!videoId) {

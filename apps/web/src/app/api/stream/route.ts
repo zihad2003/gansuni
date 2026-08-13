@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import ytdl from '@distube/ytdl-core'
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -7,20 +6,22 @@ const CORS_HEADERS = {
   'Access-Control-Allow-Headers': 'Content-Type, Authorization',
 }
 
+const INVIDIOUS_INSTANCES = [
+  'https://yewtu.be',
+  'https://inv.nadeko.net',
+  'https://inv.tux.pizza',
+  'https://invidious.flokinet.to',
+  'https://iv.melmac.space',
+  'https://invidious.fdn.fr',
+  'https://invidious.perennialworks.net',
+  'https://yt.artemislena.eu',
+]
+
 const PIPED_INSTANCES = [
   'https://pipedapi.adminforge.de',
   'https://pipedapi.mha.fi',
   'https://pipedapi.kavin.rocks',
   'https://api.piped.privacydev.net',
-]
-
-const INVIDIOUS_INSTANCES = [
-  'https://inv.nadeko.net',
-  'https://invidious.drgns.space',
-  'https://inv.tux.pizza',
-  'https://invidious.nerdvpn.de',
-  'https://yewtu.be',
-  'https://invidious.flokinet.to',
 ]
 
 const FALLBACK_AUDIO_URLS: Record<string, string> = {
@@ -40,57 +41,39 @@ function cleanSearchQuery(raw: string) {
     .trim()
 }
 
-async function tryYtdlStream(videoId: string) {
-  try {
-    const info = await ytdl.getInfo(videoId, {
-      requestOptions: {
-        headers: {
-          'User-Agent':
-            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        },
-      },
-    })
-    const audioFormats = ytdl.filterFormats(info.formats, 'audioonly')
-    if (audioFormats.length > 0) {
-      audioFormats.sort((a, b) => (b.bitrate || 0) - (a.bitrate || 0))
-      const best = audioFormats[0]
-      if (best?.url) {
-        return {
-          title: info.videoDetails.title || 'YouTube Audio',
-          artist: info.videoDetails.author?.name || 'YouTube Artist',
-          durationMs: parseInt(info.videoDetails.lengthSeconds || '210', 10) * 1000,
-          audioUrl: best.url,
-          quality: `${best.bitrate || 128}kbps`,
-          source: 'ytdl-core',
-        }
-      }
-    }
-  } catch (err: any) {
-    console.warn(`ytdl-core failed for ${videoId}:`, err?.message)
-  }
-  return null
-}
-
 async function tryInvidiousStream(baseUrl: string, videoId: string) {
-  const streamUrl = `${baseUrl}/api/v1/videos/${videoId}?fields=title,author,lengthSeconds,adaptiveFormats`
+  const streamUrl = `${baseUrl}/api/v1/videos/${videoId}`
   const res = await fetch(streamUrl, {
-    headers: { Accept: 'application/json' },
-    signal: AbortSignal.timeout(5000),
+    headers: {
+      'User-Agent':
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+      Accept: 'application/json',
+    },
+    signal: AbortSignal.timeout(4000),
   })
   if (!res.ok) throw new Error(`Invidious ${baseUrl} returned ${res.status}`)
   const data = await res.json()
-  const audioFormats = (data.adaptiveFormats || []).filter(
-    (f: any) => f.type?.startsWith('audio/') && f.url
-  )
+  const adaptive = data.adaptiveFormats || []
+  const audioFormats = adaptive.filter((f: any) => {
+    const mime = (f.mimeType || f.type || f.container || '').toLowerCase()
+    return mime.includes('audio') || mime.includes('webm') || mime.includes('m4a') || mime.includes('mp4')
+  })
+
   if (!audioFormats.length) throw new Error('No audio formats from Invidious')
-  audioFormats.sort((a: any, b: any) => (b.bitrate || 0) - (a.bitrate || 0))
+  audioFormats.sort((a: any, b: any) => parseInt(b.bitrate || '0', 10) - parseInt(a.bitrate || '0', 10))
   const best = audioFormats[0]
+  let audioUrl = best.url || best.audioUrl || ''
+  if (!audioUrl) throw new Error('No URL in best audio format')
+  if (audioUrl.startsWith('/')) {
+    audioUrl = `${baseUrl}${audioUrl}`
+  }
+
   return {
     title: data.title || 'YouTube Audio',
     artist: data.author || 'YouTube Artist',
     durationMs: (data.lengthSeconds || 210) * 1000,
-    audioUrl: best.url,
-    quality: best.encoding || '320kbps',
+    audioUrl,
+    quality: best.quality || '320kbps',
     source: 'invidious',
   }
 }
@@ -99,7 +82,7 @@ async function tryPipedStream(baseUrl: string, videoId: string) {
   const streamUrl = `${baseUrl}/streams/${videoId}`
   const res = await fetch(streamUrl, {
     headers: { Accept: 'application/json' },
-    signal: AbortSignal.timeout(5000),
+    signal: AbortSignal.timeout(4000),
   })
   if (!res.ok) throw new Error(`Piped ${baseUrl} returned ${res.status}`)
   const data = await res.json()
@@ -119,10 +102,10 @@ async function tryPipedStream(baseUrl: string, videoId: string) {
 }
 
 async function searchYouTubeId(query: string): Promise<string | null> {
-  for (const instance of INVIDIOUS_INSTANCES.slice(0, 3)) {
+  for (const instance of INVIDIOUS_INSTANCES) {
     try {
       const res = await fetch(
-        `${instance}/api/v1/search?q=${encodeURIComponent(query)}&type=video&fields=videoId,title`,
+        `${instance}/api/v1/search?q=${encodeURIComponent(query)}&type=video`,
         { headers: { Accept: 'application/json' }, signal: AbortSignal.timeout(4000) }
       )
       if (!res.ok) continue
@@ -130,48 +113,28 @@ async function searchYouTubeId(query: string): Promise<string | null> {
       if (Array.isArray(data) && data[0]?.videoId) return data[0].videoId
     } catch {}
   }
-  for (const instance of PIPED_INSTANCES.slice(0, 3)) {
-    try {
-      const res = await fetch(
-        `${instance}/search?q=${encodeURIComponent(query)}&filter=music_songs`,
-        { headers: { Accept: 'application/json' }, signal: AbortSignal.timeout(4000) }
-      )
-      if (!res.ok) continue
-      const data = await res.json()
-      const item = data?.items?.[0]
-      if (item?.url) {
-        const match = item.url.match(/[?&]v=([^&]+)/)
-        if (match) return match[1]
-        if (item.url.startsWith('/watch?v=')) return item.url.replace('/watch?v=', '')
-      }
-    } catch {}
-  }
   return null
 }
 
 async function resolveAudioForVideoId(videoId: string) {
-  // Strategy 1: @distube/ytdl-core
-  const ytdlResult = await tryYtdlStream(videoId)
-  if (ytdlResult) return ytdlResult
-
-  // Strategy 2: Invidious Instances
+  // Strategy 1: Active Invidious Mirrors
   for (const instance of INVIDIOUS_INSTANCES) {
     try {
       return await tryInvidiousStream(instance, videoId)
     } catch (e: any) {}
   }
 
-  // Strategy 3: Piped Instances
+  // Strategy 2: Active Piped Mirrors
   for (const instance of PIPED_INSTANCES) {
     try {
       return await tryPipedStream(instance, videoId)
     } catch (e: any) {}
   }
 
-  // Strategy 4: Fallback Known URLs
+  // Strategy 3: Known Catalog Fallback Audio
   if (FALLBACK_AUDIO_URLS[videoId]) {
     return {
-      title: 'Bengali Classical Audio',
+      title: 'Bengali Audio Track',
       artist: 'Bengali Musician',
       durationMs: 210000,
       audioUrl: FALLBACK_AUDIO_URLS[videoId],
@@ -180,7 +143,7 @@ async function resolveAudioForVideoId(videoId: string) {
     }
   }
 
-  // Strategy 5: Generic High Quality Royalty Free Fallback
+  // Strategy 4: High-Quality Audio Stream Fallback
   return {
     title: 'Audio Track',
     artist: 'Bengali Audio Stream',
@@ -210,11 +173,12 @@ export async function GET(request: NextRequest) {
 
     if (!videoId && query) {
       const clean = cleanSearchQuery(query)
-      videoId = await searchYouTubeId(clean)
+      const foundId = await searchYouTubeId(clean)
+      if (foundId) videoId = foundId
     }
 
     if (!videoId) {
-      videoId = '6w97fN5c44E' // Default fallback Rabindra Sangeet
+      videoId = '6w97fN5c44E'
     }
 
     const result = await resolveAudioForVideoId(videoId)
