@@ -1,12 +1,5 @@
 {
   "name": "gaansuni",
   "pages_build_output_dir": "out",
-  "compatibility_date": "2026-08-11",
-  "d1_databases": [
-    {
-      "binding": "DB",
-      "database_name": "gansuni-db",
-      "database_id": "gansuni-db-id"
-    }
-  ]
+  "compatibility_date": "2026-08-11"
 }
