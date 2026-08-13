@@ -44,7 +44,7 @@ export function YouTubePlayerBridge(): JSX.Element {
         height: '1',
         width: '1',
         playerVars: {
-          autoplay: 0,
+          autoplay: 1,
           controls: 0,
           disablekb: 1,
           fs: 0,
@@ -55,6 +55,21 @@ export function YouTubePlayerBridge(): JSX.Element {
         events: {
           onReady: () => {
             isReadyRef.current = true
+            const s = useAudioPlayer.getState()
+            const vId =
+              s.currentTrack?.youtubeId ||
+              (s.currentTrack?.id?.startsWith('yt_') ? s.currentTrack.id.replace(/^yt_/, '') : null)
+
+            if (vId && playerRef.current) {
+              try {
+                playerRef.current.loadVideoById(vId)
+                if (s.playbackState === 'playing') {
+                  playerRef.current.playVideo()
+                }
+              } catch (e) {
+                console.warn('onReady playback error:', e)
+              }
+            }
           },
           onStateChange: (event: any) => {
             const YTState = window.YT.PlayerState
@@ -144,9 +159,8 @@ export function YouTubePlayerBridge(): JSX.Element {
   }, [])
 
   return (
-    <div
-      id="yt-hidden-audio-player"
-      className="fixed -top-96 -left-96 w-1 h-1 pointer-events-none opacity-0 overflow-hidden"
-    />
+    <div className="fixed bottom-0 right-0 w-1 h-1 pointer-events-none opacity-0 overflow-hidden z-0">
+      <div id="yt-hidden-audio-player" />
+    </div>
   )
 }
