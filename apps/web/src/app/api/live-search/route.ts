@@ -53,14 +53,16 @@ async function searchYouTubeScrape(query: string, limit = 20) {
         const videoId = v.videoId
         if (!videoId || typeof videoId !== 'string') continue
 
-        const title =
+        const title: string = String(
           v.title?.runs?.[0]?.text ||
           v.title?.accessibility?.accessibilityData?.label ||
           `${query} Track ${tracks.length + 1}`
-        const artistName =
+        )
+        const artistName: string = String(
           v.ownerText?.runs?.[0]?.text ||
           v.shortBylineText?.runs?.[0]?.text ||
           'YouTube Creator'
+        )
 
         const durationText = v.lengthText?.simpleText || '3:30'
         const parts = durationText.split(':').map((p: string) => parseInt(p, 10))
