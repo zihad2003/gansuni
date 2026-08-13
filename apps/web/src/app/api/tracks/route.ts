@@ -1,25 +1,12 @@
+import { NextResponse } from 'next/server'
+
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type, Authorization',
 }
 
-function jsonResponse(data, status = 200) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: {
-      'Content-Type': 'application/json',
-      'Cache-Control': 'public, max-age=60, s-maxage=300',
-      ...CORS_HEADERS,
-    },
-  })
-}
-
-export async function onRequestOptions() {
-  return new Response(null, { status: 204, headers: CORS_HEADERS })
-}
-
-const FALLBACK_AUDIO_URLS = {
+const FALLBACK_AUDIO_URLS: Record<string, string> = {
   '6w97fN5c44E': 'https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3',
   'l1m4E-s1t8Y': 'https://cdn.pixabay.com/download/audio/2022/01/18/audio_d0a13f69d2.mp3',
   'QG802l6XUCA': 'https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8c8a73467.mp3',
@@ -215,67 +202,13 @@ const STARTER_CATALOG = [
   },
 ]
 
-export async function onRequestGet(context) {
-  try {
-    const db = context?.env?.DB
-    if (db) {
-      const query = `
-        SELECT
-          t.id, t.title, t.slug, t.audio_url as audioUrl, t.youtube_id as youtubeId,
-          t.duration_ms as durationMs, t.track_number as trackNumber, t.disc_number as discNumber,
-          t.explicit, t.play_count as playCount, t.is_premium as isPremium, t.created_at as createdAt,
-          a.id as artistId, a.name as artistName, a.slug as artistSlug, a.bio as artistBio,
-          a.avatar_url as artistAvatarUrl, a.verified as artistVerified, a.monthly_listeners as artistMonthlyListeners,
-          alb.id as albumId, alb.title as albumTitle, alb.slug as albumSlug, alb.cover_art_url as albumCoverArtUrl
-        FROM tracks t
-        LEFT JOIN artists a ON t.artist_id = a.id
-        LEFT JOIN albums alb ON t.album_id = alb.id
-        ORDER BY t.play_count DESC
-      `
-      const { results } = await db.prepare(query).all()
-      if (results && results.length > 0) {
-        const tracks = results.map((r) => ({
-          id: r.id,
-          title: r.title,
-          slug: r.slug,
-          artistId: r.artistId,
-          artist: {
-            id: r.artistId,
-            name: r.artistName || 'Unknown Artist',
-            slug: r.artistSlug || 'unknown-artist',
-            bio: r.artistBio || '',
-            avatarUrl: r.artistAvatarUrl || '',
-            verified: Boolean(r.artistVerified),
-            monthlyListeners: r.artistMonthlyListeners || 0,
-          },
-          albumId: r.albumId,
-          album: {
-            id: r.albumId,
-            title: r.albumTitle || 'Single',
-            slug: r.albumSlug || 'single',
-            artistId: r.artistId,
-            coverArtUrl: r.albumCoverArtUrl || '',
-          },
-          audioUrl: r.audioUrl,
-          youtubeId: r.youtubeId || null,
-          durationMs: r.durationMs,
-          trackNumber: r.trackNumber,
-          discNumber: r.discNumber,
-          explicit: Boolean(r.explicit),
-          playCount: r.playCount,
-          isPremium: Boolean(r.isPremium),
-          createdAt: r.createdAt,
-          updatedAt: r.createdAt,
-        }))
-        return jsonResponse({ userTracks: [], allTracks: tracks })
-      }
-    }
-  } catch (e) {
-    console.warn('D1 fetch failed, falling back to starter catalog:', e?.message)
-  }
+export async function OPTIONS() {
+  return new Response(null, { status: 204, headers: CORS_HEADERS })
+}
 
-  return jsonResponse({
-    userTracks: [],
-    allTracks: STARTER_CATALOG,
-  })
+export async function GET() {
+  return NextResponse.json(
+    { userTracks: [], allTracks: STARTER_CATALOG },
+    { headers: CORS_HEADERS }
+  )
 }

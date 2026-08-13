@@ -4,9 +4,11 @@ const withPWA = require('next-pwa')({
   register: true,
   skipWaiting: true,
   disable: process.env.NODE_ENV === 'development',
+  fallbacks: false,
+  buildExcludes: [/app-build-manifest\.json$/],
   runtimeCaching: [
     {
-      urlPattern: /^https:\/\/.*\.(mp3|wav|ogg|m4a|flac|webm|m4a)$/i,
+      urlPattern: /^https:\/\/.*\.(mp3|wav|ogg|m4a|flac|webm)$/i,
       handler: 'CacheFirst',
       options: {
         cacheName: 'gansuni-audio-cache',
@@ -44,7 +46,6 @@ const withPWA = require('next-pwa')({
 })
 
 const nextConfig = withPWA({
-  output: 'export',
   reactStrictMode: true,
   poweredByHeader: false,
   trailingSlash: true,

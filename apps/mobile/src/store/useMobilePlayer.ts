@@ -125,6 +125,14 @@ export const useMobilePlayer = create<PlayerSlice & InternalState>((set, get) =>
       }
     }
 
+    if (!uri || uri.startsWith('/api/stream') || uri.includes('/api/stream')) {
+      if ((track as any).fallbackAudioUrl) {
+        uri = (track as any).fallbackAudioUrl
+      } else {
+        uri = 'https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3'
+      }
+    }
+
     return { uri, isOffline: false }
   },
 

@@ -1,22 +1,9 @@
+import { NextRequest, NextResponse } from 'next/server'
+
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-}
-
-function jsonResponse(data, status = 200) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: {
-      'Content-Type': 'application/json',
-      'Cache-Control': 'public, max-age=1800, s-maxage=3600',
-      ...CORS_HEADERS,
-    },
-  })
-}
-
-export async function onRequestOptions() {
-  return new Response(null, { status: 204, headers: CORS_HEADERS })
 }
 
 const INVIDIOUS_INSTANCES = [
@@ -33,7 +20,7 @@ const PIPED_INSTANCES = [
   'https://pipedapi.kavin.rocks',
 ]
 
-async function searchInvidiousYouTube(query, limit = 20) {
+async function searchInvidiousYouTube(query: string, limit = 20) {
   for (const instance of INVIDIOUS_INSTANCES) {
     try {
       const res = await fetch(
@@ -107,7 +94,7 @@ async function searchInvidiousYouTube(query, limit = 20) {
   return null
 }
 
-async function searchPipedYouTube(query, limit = 20) {
+async function searchPipedYouTube(query: string, limit = 20) {
   for (const instance of PIPED_INSTANCES) {
     try {
       const res = await fetch(
@@ -185,13 +172,14 @@ async function searchPipedYouTube(query, limit = 20) {
   return null
 }
 
-async function searchYouTubeScrape(query, limit = 20) {
+async function searchYouTubeScrape(query: string, limit = 20) {
   try {
     const res = await fetch(
       `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`,
       {
         headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'User-Agent':
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
           'Accept-Language': 'en-US,en;q=0.9',
         },
         signal: AbortSignal.timeout(4000),
@@ -206,8 +194,8 @@ async function searchYouTubeScrape(query, limit = 20) {
     return videoIds.map((id, index) => {
       const titleMatch = html.match(new RegExp(`"videoId":"${id}".*?"title":\\{"runs":\\[\\{"text":"([^"]+)"\\}\\]\\}`))
       const authorMatch = html.match(new RegExp(`"videoId":"${id}".*?"ownerText":\\{"runs":\\[\\{"text":"([^"]+)"\\}\\]\\}`))
-      const title = titleMatch ? titleMatch[1] : `${query} Track ${index + 1}`
-      const artistName = authorMatch ? authorMatch[1] : 'YouTube Creator'
+      const title: string = (titleMatch && titleMatch[1]) ? titleMatch[1] : `${query} Track ${index + 1}`
+      const artistName: string = (authorMatch && authorMatch[1]) ? authorMatch[1] : 'YouTube Creator'
       const coverArtUrl = `https://i.ytimg.com/vi/${id}/hqdefault.jpg`
 
       return {
@@ -255,9 +243,13 @@ async function searchYouTubeScrape(query, limit = 20) {
   return null
 }
 
-export async function onRequestGet(context) {
+export async function OPTIONS() {
+  return new Response(null, { status: 204, headers: CORS_HEADERS })
+}
+
+export async function GET(request: NextRequest) {
   try {
-    const url = new URL(context.request.url)
+    const url = new URL(request.url)
     const query = url.searchParams.get('q') || url.searchParams.get('query') || 'Rabindra Sangeet'
     const limit = Math.min(30, parseInt(url.searchParams.get('limit') || '20', 10))
 
@@ -276,13 +268,19 @@ export async function onRequestGet(context) {
 
     if (!tracks) tracks = []
 
-    return jsonResponse({
-      query,
-      source,
-      count: tracks.length,
-      tracks,
-    })
-  } catch (error) {
-    return jsonResponse({ error: error?.message || 'Failed to fetch live search' }, 500)
+    return NextResponse.json(
+      {
+        query,
+        source,
+        count: tracks.length,
+        tracks,
+      },
+      { headers: CORS_HEADERS }
+    )
+  } catch (error: any) {
+    return NextResponse.json(
+      { error: error?.message || 'Failed to fetch live search' },
+      { status: 500, headers: CORS_HEADERS }
+    )
   }
 }
