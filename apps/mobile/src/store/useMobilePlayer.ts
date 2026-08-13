@@ -129,7 +129,8 @@ export const useMobilePlayer = create<PlayerSlice & InternalState>((set, get) =>
       if ((track as any).fallbackAudioUrl) {
         uri = (track as any).fallbackAudioUrl
       } else {
-        uri = 'https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3'
+        const vId = track.youtubeId || track.id.replace(/^yt_/, '')
+        uri = `https://yewtu.be/latest_version?id=${vId}&itag=251`
       }
     }
 

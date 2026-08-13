@@ -186,7 +186,7 @@ export const useAudioPlayer = create<PlayerSlice & InternalState>((set, get) => 
       return (track as any).fallbackAudioUrl
     }
 
-    return 'https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3'
+    return `https://inv.nadeko.net/latest_version?id=${videoId}&itag=251`
   },
 
   play: async (track?: Track, queue?: QueueItem[], startIndex = 0) => {
