@@ -71,6 +71,7 @@ export const useAudioPlayer = create<PlayerSlice & InternalState>((set, get) => 
   isLiked: (trackId: string) => get().likedTrackIds.includes(trackId),
   _audioEl: null,
   isSeeking: false,
+  _seekTargetMs: null,
 
   _boundEvents: false,
   _shuffleIndices: [],
@@ -378,11 +379,13 @@ export const useAudioPlayer = create<PlayerSlice & InternalState>((set, get) => 
 
   seekTo: (ms: number) => {
     const audio = get()._audioEl
+    const sec = ms / 1000
     if (audio) {
-      const sec = ms / 1000
-      audio.currentTime = sec
-      set({ currentTime: ms })
+      try {
+        audio.currentTime = sec
+      } catch {}
     }
+    set({ currentTime: ms, _seekTargetMs: ms })
   },
 
   setVolume: (volume: number) => {

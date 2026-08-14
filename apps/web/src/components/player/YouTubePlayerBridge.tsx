@@ -14,11 +14,13 @@ export function YouTubePlayerBridge(): JSX.Element {
   const playerRef = useRef<any>(null)
   const isReadyRef = useRef<boolean>(false)
   const intervalRef = useRef<any>(null)
+  const lastSeekRef = useRef<number | null>(null)
 
   const currentTrack = useAudioPlayer((s) => s.currentTrack)
   const playbackState = useAudioPlayer((s) => s.playbackState)
   const volume = useAudioPlayer((s) => s.volume)
   const muted = useAudioPlayer((s) => s.muted)
+  const seekTargetMs = useAudioPlayer((s) => (s as any)._seekTargetMs)
 
   // 1. Load YouTube IFrame API Script
   useEffect(() => {
@@ -125,7 +127,20 @@ export function YouTubePlayerBridge(): JSX.Element {
     }
   }, [currentTrack, playbackState, volume, muted])
 
-  // 3. Time Update Poller
+  // 3. Seeking Listener
+  useEffect(() => {
+    if (seekTargetMs != null && seekTargetMs !== lastSeekRef.current && isReadyRef.current && playerRef.current) {
+      lastSeekRef.current = seekTargetMs
+      try {
+        const sec = seekTargetMs / 1000
+        playerRef.current.seekTo(sec, true)
+      } catch (e) {
+        console.warn('YT seekTo error:', e)
+      }
+    }
+  }, [seekTargetMs])
+
+  // 4. Time Update Poller (250ms for smooth progress bar tracking)
   useEffect(() => {
     intervalRef.current = setInterval(() => {
       if (!isReadyRef.current || !playerRef.current) return
@@ -145,7 +160,7 @@ export function YouTubePlayerBridge(): JSX.Element {
           }
         } catch {}
       }
-    }, 500)
+    }, 250)
 
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current)
