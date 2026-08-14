@@ -24,6 +24,7 @@ interface InternalState {
   toggleLikeTrack: (trackObj: Track | string) => void
   isLiked: (trackId: string) => boolean
   _audioEl: HTMLAudioElement | null
+  _seekTargetMs: number | null
   _boundEvents: boolean
   _shuffleIndices: number[]
   _shuffleIdx: number
