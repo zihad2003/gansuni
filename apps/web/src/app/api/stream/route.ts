@@ -7,12 +7,18 @@ const CORS_HEADERS = {
 }
 
 const INVIDIOUS_INSTANCES = [
-  'https://inv.nadeko.net',
   'https://yewtu.be',
+  'https://inv.nadeko.net',
   'https://inv.tux.pizza',
   'https://invidious.flokinet.to',
   'https://iv.melmac.space',
   'https://invidious.fdn.fr',
+]
+
+const PIPED_INSTANCES = [
+  'https://pipedapi.adminforge.de',
+  'https://pipedapi.mha.fi',
+  'https://pipedapi.kavin.rocks',
 ]
 
 const FALLBACK_AUDIO_URLS: Record<string, string> = {
@@ -24,6 +30,7 @@ const FALLBACK_AUDIO_URLS: Record<string, string> = {
 }
 
 async function resolveDirectAudioUrl(videoId: string): Promise<string | null> {
+  // Strategy 1: Invidious Instances
   for (const instance of INVIDIOUS_INSTANCES) {
     try {
       const res = await fetch(`${instance}/api/v1/videos/${videoId}`, {
@@ -53,6 +60,23 @@ async function resolveDirectAudioUrl(videoId: string): Promise<string | null> {
       return audioUrl
     } catch {}
   }
+
+  // Strategy 2: Piped Instances
+  for (const instance of PIPED_INSTANCES) {
+    try {
+      const res = await fetch(`${instance}/streams/${videoId}`, {
+        headers: { Accept: 'application/json' },
+        signal: AbortSignal.timeout(4000),
+      })
+      if (!res.ok) continue
+      const data = await res.json()
+      const streams = data.audioStreams || []
+      if (!streams.length) continue
+      streams.sort((a: any, b: any) => (b.bitrate || 0) - (a.bitrate || 0))
+      if (streams[0]?.url) return streams[0].url
+    } catch {}
+  }
+
   return null
 }
 
@@ -88,7 +112,6 @@ export async function GET(request: NextRequest) {
     })
 
     if (!audioRes.ok && audioRes.status !== 206) {
-      // Fallback redirect if streaming fetch returns non-200
       return NextResponse.redirect(targetUrl, { status: 302, headers: CORS_HEADERS })
     }
 

@@ -147,27 +147,17 @@ export const useAudioPlayer = create<PlayerSlice & InternalState>((set, get) => 
       if (!track) return
 
       const videoId = track.youtubeId || track.id.replace(/^yt_/, '')
-      const FALLBACK_SERVERS = [
-        'https://inv.nadeko.net',
-        'https://inv.tux.pizza',
-        'https://invidious.flokinet.to',
-        'https://yewtu.be',
-      ]
-
       const currentRetry = s._retryCount || 0
-      if (currentRetry < FALLBACK_SERVERS.length) {
-        const nextServer = FALLBACK_SERVERS[currentRetry]
-        const fallbackUrl = `${nextServer}/latest_version?id=${videoId}&itag=251`
+      if (currentRetry < 3) {
         set({ _retryCount: currentRetry + 1, playbackState: 'loading' })
-        audio.src = fallbackUrl
+        const retryUrl = `/api/stream?videoId=${videoId}&retry=${currentRetry + 1}&t=${Date.now()}`
+        audio.src = retryUrl
         try {
           await audio.play()
           set({ playbackState: 'playing', error: null, _retryCount: 0 })
-        } catch {
-          // Triggers next error retry step automatically
-        }
+        } catch {}
       } else {
-        set({ playbackState: 'error', error: 'Playback failed. Tap to retry.' })
+        set({ playbackState: 'error', error: 'Playback error. Tap to retry or try another track.' })
       }
     })
 
@@ -249,13 +239,9 @@ export const useAudioPlayer = create<PlayerSlice & InternalState>((set, get) => 
       const videoId = track.youtubeId || (track.id?.startsWith('yt_') ? track.id.replace(/^yt_/, '') : null)
 
       let targetUrl = track.audioUrl || ''
-      if (!targetUrl || targetUrl.startsWith('/api/stream') || targetUrl.includes('/api/stream')) {
-        if (videoId) {
-          targetUrl = `https://yewtu.be/latest_version?id=${videoId}&itag=251`
-        }
-      }
-
-      if (targetUrl.startsWith('http:')) {
+      if (videoId) {
+        targetUrl = `/api/stream?videoId=${videoId}`
+      } else if (targetUrl.startsWith('http:')) {
         targetUrl = targetUrl.replace(/^http:/i, 'https:')
       }
 
@@ -268,17 +254,16 @@ export const useAudioPlayer = create<PlayerSlice & InternalState>((set, get) => 
         await audio.play()
         set({ playbackState: 'playing', error: null, _retryCount: 0 })
       } catch (e: any) {
-        console.warn('Primary audio.play failed, retrying failover:', e)
+        console.warn('Primary audio.play failed, retrying stream proxy:', e)
         if (videoId) {
-          const fallbackUrl = `https://inv.nadeko.net/latest_version?id=${videoId}&itag=251`
-          audio.src = fallbackUrl
+          audio.src = `/api/stream?videoId=${videoId}&retry=1&t=${Date.now()}`
           try {
             await audio.play()
             set({ playbackState: 'playing', error: null, _retryCount: 0 })
             return
           } catch {}
         }
-        set({ playbackState: 'error', error: 'Audio stream playback failed.' })
+        set({ playbackState: 'error', error: 'Audio stream playback failed. Tap to retry.' })
       }
       return
     }
