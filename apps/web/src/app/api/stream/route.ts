@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Methods': 'GET, HEAD, POST, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type, Authorization, Range',
 }
 
@@ -15,12 +15,6 @@ const INVIDIOUS_INSTANCES = [
   'https://invidious.fdn.fr',
 ]
 
-const PIPED_INSTANCES = [
-  'https://pipedapi.adminforge.de',
-  'https://pipedapi.mha.fi',
-  'https://pipedapi.kavin.rocks',
-]
-
 const FALLBACK_AUDIO_URLS: Record<string, string> = {
   '6w97fN5c44E': 'https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3',
   'l1m4E-s1t8Y': 'https://cdn.pixabay.com/download/audio/2022/01/18/audio_d0a13f69d2.mp3',
@@ -30,13 +24,12 @@ const FALLBACK_AUDIO_URLS: Record<string, string> = {
 }
 
 async function resolveDirectAudioUrl(videoId: string): Promise<string | null> {
-  // Strategy 1: Invidious Instances
   for (const instance of INVIDIOUS_INSTANCES) {
     try {
       const res = await fetch(`${instance}/api/v1/videos/${videoId}`, {
         headers: {
           'User-Agent':
-            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+            'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
           Accept: 'application/json',
         },
         signal: AbortSignal.timeout(4000),
@@ -61,27 +54,19 @@ async function resolveDirectAudioUrl(videoId: string): Promise<string | null> {
     } catch {}
   }
 
-  // Strategy 2: Piped Instances
-  for (const instance of PIPED_INSTANCES) {
-    try {
-      const res = await fetch(`${instance}/streams/${videoId}`, {
-        headers: { Accept: 'application/json' },
-        signal: AbortSignal.timeout(4000),
-      })
-      if (!res.ok) continue
-      const data = await res.json()
-      const streams = data.audioStreams || []
-      if (!streams.length) continue
-      streams.sort((a: any, b: any) => (b.bitrate || 0) - (a.bitrate || 0))
-      if (streams[0]?.url) return streams[0].url
-    } catch {}
-  }
-
   return null
 }
 
 export async function OPTIONS() {
   return new Response(null, { status: 204, headers: CORS_HEADERS })
+}
+
+export async function HEAD(request: NextRequest) {
+  const getRes = await GET(request)
+  return new Response(null, {
+    status: getRes.status,
+    headers: getRes.headers,
+  })
 }
 
 export async function GET(request: NextRequest) {

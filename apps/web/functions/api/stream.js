@@ -1,6 +1,6 @@
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Methods': 'GET, HEAD, POST, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type, Authorization, Range',
 }
 
@@ -11,12 +11,6 @@ const INVIDIOUS_INSTANCES = [
   'https://invidious.flokinet.to',
   'https://iv.melmac.space',
   'https://invidious.fdn.fr',
-]
-
-const PIPED_INSTANCES = [
-  'https://pipedapi.adminforge.de',
-  'https://pipedapi.mha.fi',
-  'https://pipedapi.kavin.rocks',
 ]
 
 const FALLBACK_AUDIO_URLS = {
@@ -31,14 +25,21 @@ export async function onRequestOptions() {
   return new Response(null, { status: 204, headers: CORS_HEADERS })
 }
 
+export async function onRequestHead(context) {
+  const getRes = await onRequestGet(context)
+  return new Response(null, {
+    status: getRes.status,
+    headers: getRes.headers,
+  })
+}
+
 async function resolveDirectAudioUrl(videoId) {
-  // Strategy 1: Invidious Instances
   for (const instance of INVIDIOUS_INSTANCES) {
     try {
       const res = await fetch(`${instance}/api/v1/videos/${videoId}`, {
         headers: {
           'User-Agent':
-            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+            'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
           Accept: 'application/json',
         },
         signal: AbortSignal.timeout(4000),
@@ -62,23 +63,6 @@ async function resolveDirectAudioUrl(videoId) {
       return audioUrl
     } catch {}
   }
-
-  // Strategy 2: Piped Instances
-  for (const instance of PIPED_INSTANCES) {
-    try {
-      const res = await fetch(`${instance}/streams/${videoId}`, {
-        headers: { Accept: 'application/json' },
-        signal: AbortSignal.timeout(4000),
-      })
-      if (!res.ok) continue
-      const data = await res.json()
-      const streams = data.audioStreams || []
-      if (!streams.length) continue
-      streams.sort((a, b) => (b.bitrate || 0) - (a.bitrate || 0))
-      if (streams[0]?.url) return streams[0].url
-    } catch {}
-  }
-
   return null
 }
 
