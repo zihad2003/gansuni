@@ -20,7 +20,7 @@ const FALLBACK_AUDIO_URLS = {
   'jR_5908N3kE': 'https://cdn.pixabay.com/download/audio/2021/08/09/audio_884325752c.mp3',
 }
 
-function fetchWithTimeout(url, options = {}, ms = 5000) {
+function fetchWithTimeout(url, options = {}, ms = 3000) {
   const controller = new AbortController()
   const id = setTimeout(() => controller.abort(), ms)
   return fetch(url, {
@@ -41,40 +41,42 @@ export async function onRequestHead(context) {
   })
 }
 
-async function resolveDirectAudioUrl(videoId) {
-  for (const instance of INVIDIOUS_INSTANCES) {
-    try {
-      const res = await fetchWithTimeout(
-        `${instance}/api/v1/videos/${videoId}`,
-        {
-          headers: {
-            'User-Agent':
-              'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15',
-            Accept: 'application/json',
-          },
+async function resolveDirectAudioUrlFast(videoId) {
+  const fetchFormat = async (inst) => {
+    const res = await fetchWithTimeout(
+      `${inst}/api/v1/videos/${videoId}`,
+      {
+        headers: {
+          'User-Agent':
+            'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15',
+          Accept: 'application/json',
         },
-        3500
-      )
-      if (!res.ok) continue
-      const data = await res.json()
-      const adaptive = data.adaptiveFormats || []
-      const audioFormats = adaptive.filter((f) => {
-        const mime = (f.mimeType || f.type || f.container || '').toLowerCase()
-        return mime.includes('audio') || mime.includes('webm') || mime.includes('m4a') || mime.includes('mp4')
-      })
-
-      if (!audioFormats.length) continue
-      audioFormats.sort((a, b) => parseInt(b.bitrate || '0', 10) - parseInt(a.bitrate || '0', 10))
-      const best = audioFormats[0]
-      let audioUrl = best.url || best.audioUrl || ''
-      if (!audioUrl) continue
-      if (audioUrl.startsWith('/')) {
-        audioUrl = `${instance}${audioUrl}`
-      }
-      return audioUrl
-    } catch {}
+      },
+      2500
+    )
+    if (!res.ok) throw new Error(`${inst} status ${res.status}`)
+    const data = await res.json()
+    const adaptive = data.adaptiveFormats || []
+    const audioFormats = adaptive.filter((f) => {
+      const mime = (f.mimeType || f.type || f.container || '').toLowerCase()
+      return mime.includes('audio') || mime.includes('webm') || mime.includes('m4a') || mime.includes('mp4')
+    })
+    if (!audioFormats.length) throw new Error(`${inst} no audio format`)
+    audioFormats.sort((a, b) => parseInt(b.bitrate || '0', 10) - parseInt(a.bitrate || '0', 10))
+    const best = audioFormats[0]
+    let audioUrl = best.url || best.audioUrl || ''
+    if (!audioUrl) throw new Error(`${inst} empty url`)
+    if (audioUrl.startsWith('/')) {
+      audioUrl = `${inst}${audioUrl}`
+    }
+    return audioUrl
   }
-  return null
+
+  try {
+    return await Promise.any(INVIDIOUS_INSTANCES.map((inst) => fetchFormat(inst)))
+  } catch {
+    return null
+  }
 }
 
 export async function onRequestGet(context) {
@@ -87,7 +89,7 @@ export async function onRequestGet(context) {
     }
 
     const rangeHeader = context.request.headers.get('range')
-    const directAudioUrl = await resolveDirectAudioUrl(videoId)
+    const directAudioUrl = await resolveDirectAudioUrlFast(videoId)
 
     const targetUrl = directAudioUrl || FALLBACK_AUDIO_URLS[videoId] || 'https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3'
 
