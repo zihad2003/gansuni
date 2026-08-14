@@ -41,8 +41,8 @@ export function YouTubePlayerBridge(): JSX.Element {
     function initPlayer() {
       if (playerRef.current) return
       playerRef.current = new window.YT.Player('yt-hidden-audio-player', {
-        height: '1',
-        width: '1',
+        height: '100%',
+        width: '100%',
         playerVars: {
           autoplay: 1,
           controls: 0,
@@ -104,12 +104,6 @@ export function YouTubePlayerBridge(): JSX.Element {
       (currentTrack.id?.startsWith('yt_') ? currentTrack.id.replace(/^yt_/, '') : null)
 
     if (videoId && isReadyRef.current && playerRef.current) {
-      // Pause standard HTML5 audio to prevent dual playback
-      const htmlAudio = useAudioPlayer.getState()._audioEl
-      if (htmlAudio && !htmlAudio.paused) {
-        htmlAudio.pause()
-      }
-
       try {
         const p = playerRef.current
         const currVid = p.getVideoData ? p.getVideoData()?.video_id : null
@@ -159,8 +153,8 @@ export function YouTubePlayerBridge(): JSX.Element {
   }, [])
 
   return (
-    <div className="fixed bottom-0 right-0 w-1 h-1 pointer-events-none opacity-0 overflow-hidden z-0">
-      <div id="yt-hidden-audio-player" />
+    <div className="fixed bottom-0 right-0 w-4 h-4 pointer-events-none opacity-10 overflow-hidden z-0">
+      <div id="yt-hidden-audio-player" className="w-full h-full" />
     </div>
   )
 }

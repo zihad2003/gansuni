@@ -240,10 +240,20 @@ export const useAudioPlayer = create<PlayerSlice & InternalState>((set, get) => 
 
       const videoId = track.youtubeId || (track.id?.startsWith('yt_') ? track.id.replace(/^yt_/, '') : null)
 
-      let targetUrl = track.audioUrl || ''
       if (videoId) {
-        targetUrl = `/api/stream?videoId=${videoId}`
-      } else if (targetUrl.startsWith('http:')) {
+        // Keep mobile background audio session active via silent loop
+        try {
+          audio.src = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA='
+          audio.loop = true
+          audio.play().catch(() => {})
+        } catch {}
+
+        set({ playbackState: 'playing', error: null, _retryCount: 0 })
+        return
+      }
+
+      let targetUrl = track.audioUrl || ''
+      if (targetUrl.startsWith('http:')) {
         targetUrl = targetUrl.replace(/^http:/i, 'https:')
       }
 
@@ -256,15 +266,7 @@ export const useAudioPlayer = create<PlayerSlice & InternalState>((set, get) => 
         await audio.play()
         set({ playbackState: 'playing', error: null, _retryCount: 0 })
       } catch (e: any) {
-        console.warn('Primary audio.play failed, retrying stream proxy:', e)
-        if (videoId) {
-          audio.src = `/api/stream?videoId=${videoId}&retry=1&t=${Date.now()}`
-          try {
-            await audio.play()
-            set({ playbackState: 'playing', error: null, _retryCount: 0 })
-            return
-          } catch {}
-        }
+        console.warn('Primary audio.play failed:', e)
         set({ playbackState: 'error', error: 'Audio stream playback failed. Tap to retry.' })
       }
       return
