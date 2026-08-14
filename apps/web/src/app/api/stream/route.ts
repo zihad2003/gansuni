@@ -12,7 +12,6 @@ const INVIDIOUS_INSTANCES = [
   'https://inv.tux.pizza',
   'https://invidious.flokinet.to',
   'https://iv.melmac.space',
-  'https://invidious.fdn.fr',
 ]
 
 const FALLBACK_AUDIO_URLS: Record<string, string> = {
@@ -23,17 +22,29 @@ const FALLBACK_AUDIO_URLS: Record<string, string> = {
   'jR_5908N3kE': 'https://cdn.pixabay.com/download/audio/2021/08/09/audio_884325752c.mp3',
 }
 
+function fetchWithTimeout(url: string, options: RequestInit = {}, ms = 5000) {
+  const controller = new AbortController()
+  const id = setTimeout(() => controller.abort(), ms)
+  return fetch(url, {
+    ...options,
+    signal: controller.signal,
+  }).finally(() => clearTimeout(id))
+}
+
 async function resolveDirectAudioUrl(videoId: string): Promise<string | null> {
   for (const instance of INVIDIOUS_INSTANCES) {
     try {
-      const res = await fetch(`${instance}/api/v1/videos/${videoId}`, {
-        headers: {
-          'User-Agent':
-            'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
-          Accept: 'application/json',
+      const res = await fetchWithTimeout(
+        `${instance}/api/v1/videos/${videoId}`,
+        {
+          headers: {
+            'User-Agent':
+              'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15',
+            Accept: 'application/json',
+          },
         },
-        signal: AbortSignal.timeout(4000),
-      })
+        3500
+      )
       if (!res.ok) continue
       const data = await res.json()
       const adaptive = data.adaptiveFormats || []
@@ -91,10 +102,7 @@ export async function GET(request: NextRequest) {
       fetchHeaders['Range'] = rangeHeader
     }
 
-    const audioRes = await fetch(targetUrl, {
-      headers: fetchHeaders,
-      signal: AbortSignal.timeout(10000),
-    })
+    const audioRes = await fetchWithTimeout(targetUrl, { headers: fetchHeaders }, 8000)
 
     if (!audioRes.ok && audioRes.status !== 206) {
       return NextResponse.redirect(targetUrl, { status: 302, headers: CORS_HEADERS })
@@ -102,9 +110,6 @@ export async function GET(request: NextRequest) {
 
     const responseHeaders = new Headers(CORS_HEADERS)
     responseHeaders.set('Content-Type', audioRes.headers.get('content-type') || 'audio/webm')
-    if (audioRes.headers.get('content-length')) {
-      responseHeaders.set('Content-Length', audioRes.headers.get('content-length')!)
-    }
     if (audioRes.headers.get('content-range')) {
       responseHeaders.set('Content-Range', audioRes.headers.get('content-range')!)
     }
