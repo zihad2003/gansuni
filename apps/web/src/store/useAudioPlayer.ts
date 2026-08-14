@@ -95,7 +95,9 @@ export const useAudioPlayer = create<PlayerSlice & InternalState>((set, get) => 
     const audio = st._audioEl
 
     audio.addEventListener('loadedmetadata', () => {
-      set({ duration: (audio.duration || 0) * 1000, playbackState: 'loading' })
+      if (audio.duration && !isNaN(audio.duration)) {
+        set({ duration: audio.duration * 1000 })
+      }
     })
 
     audio.addEventListener('timeupdate', () => {
@@ -128,7 +130,7 @@ export const useAudioPlayer = create<PlayerSlice & InternalState>((set, get) => 
     })
 
     audio.addEventListener('suspend', () => {
-      set({ playbackState: 'buffering' })
+      // Normal iOS Safari buffer caching - do not override state to buffering
     })
 
     audio.addEventListener('ended', () => {

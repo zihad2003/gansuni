@@ -81,6 +81,7 @@ export function VolumeSlider({ volume, onChange, accent }: VolumeSliderProps): R
       <div
         ref={trackRef}
         className="relative w-20 sm:w-24 h-4 cursor-pointer select-none flex items-center"
+        style={{ touchAction: 'none' }}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerLeave={() => setHovering(false)}

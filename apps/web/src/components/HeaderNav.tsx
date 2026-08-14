@@ -80,13 +80,11 @@ export function HeaderNav({
           {/* DOWNLOAD APP BUTTON */}
           <button
             onClick={() => setIsDownloadOpen(true)}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-extrabold bg-gradient-to-r from-amber-500 to-orange-500 text-black hover:opacity-90 active:scale-95 transition-all shadow-md"
+            className="hidden sm:flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-extrabold bg-gradient-to-r from-amber-500 to-orange-500 text-black hover:opacity-90 active:scale-95 transition-all shadow-md"
           >
             <Download size={14} className="stroke-[2.5]" />
             <span>App Download</span>
           </button>
-
-
         </div>
       </header>
 

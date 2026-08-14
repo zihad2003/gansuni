@@ -76,6 +76,7 @@ export function ProgressBar({
       <div
         ref={trackRef}
         className="relative w-full h-4 group cursor-pointer select-none flex items-center"
+        style={{ touchAction: 'none' }}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
