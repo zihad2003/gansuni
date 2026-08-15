@@ -150,12 +150,18 @@ export const useAudioPlayer = create<PlayerSlice & InternalState>((set, get) => 
       const track = s.currentTrack
       if (!track) return
 
-      const videoId = track.youtubeId || track.id.replace(/^yt_/, '')
+      const videoId = track.youtubeId || (track.id?.startsWith('yt_') ? track.id.replace(/^yt_/, '') : null)
       const currentRetry = s._retryCount || 0
-      if (currentRetry < 3) {
+
+      if (currentRetry < 4 && videoId) {
         set({ _retryCount: currentRetry + 1, playbackState: 'loading' })
-        const retryUrl = `/api/stream?videoId=${videoId}&retry=${currentRetry + 1}&t=${Date.now()}`
-        audio.src = retryUrl
+        const mirrors = [
+          `https://inv.nadeko.net/latest_version?id=${videoId}&itag=140`,
+          `https://invidious.drgns.space/latest_version?id=${videoId}&itag=140`,
+          `https://yewtu.be/latest_version?id=${videoId}&itag=140`,
+          `/api/stream?videoId=${videoId}&retry=${currentRetry + 1}&t=${Date.now()}`
+        ]
+        audio.src = mirrors[currentRetry % mirrors.length]
         try {
           await audio.play()
           set({ playbackState: 'playing', error: null, _retryCount: 0 })
@@ -170,27 +176,7 @@ export const useAudioPlayer = create<PlayerSlice & InternalState>((set, get) => 
 
   _resolveAudioUrl: async (track: Track): Promise<string> => {
     const videoId = track.youtubeId || track.id.replace(/^yt_/, '')
-    try {
-      const res = await fetch(
-        `${STREAM_API}?videoId=${encodeURIComponent(videoId)}&q=${encodeURIComponent(track.title + ' ' + (track.artist?.name || ''))}`,
-        { signal: AbortSignal.timeout(8000) }
-      )
-      if (res.ok) {
-        const data = await res.json()
-        if (data?.audioUrl) {
-          set({ error: null })
-          return data.audioUrl.replace(/^http:/i, 'https:')
-        }
-      }
-    } catch (e) {
-      console.warn('Stream fetch error:', e)
-    }
-
-    if ((track as any).fallbackAudioUrl) {
-      return (track as any).fallbackAudioUrl
-    }
-
-    return `https://inv.nadeko.net/latest_version?id=${videoId}&itag=251`
+    return `/api/stream?videoId=${encodeURIComponent(videoId)}`
   },
 
   play: async (track?: Track, queue?: QueueItem[], startIndex = 0) => {
@@ -260,12 +246,24 @@ export const useAudioPlayer = create<PlayerSlice & InternalState>((set, get) => 
         set({ playbackState: 'playing', error: null, _retryCount: 0 })
       } catch (e: any) {
         console.warn('Primary audio.play failed:', e)
+        if (videoId) {
+          audio.src = `https://inv.nadeko.net/latest_version?id=${encodeURIComponent(videoId)}&itag=140`
+          try {
+            await audio.play()
+            set({ playbackState: 'playing', error: null, _retryCount: 0 })
+            return
+          } catch {}
+        }
         set({ playbackState: 'error', error: 'Audio stream playback failed. Tap to retry.' })
       }
       return
     }
 
-    if (state.currentTrack && audio.src) {
+    if (state.currentTrack) {
+      if (!audio.src || audio.src === 'about:blank' || audio.src.endsWith('/')) {
+        const videoId = state.currentTrack.youtubeId || (state.currentTrack.id?.startsWith('yt_') ? state.currentTrack.id.replace(/^yt_/, '') : null)
+        audio.src = videoId ? `/api/stream?videoId=${encodeURIComponent(videoId)}` : (state.currentTrack.audioUrl || '')
+      }
       try {
         audio.volume = state.muted ? 0 : clampVolume(state.volume)
         audio.playbackRate = clampSpeed(get().speed)
@@ -281,6 +279,10 @@ export const useAudioPlayer = create<PlayerSlice & InternalState>((set, get) => 
     const s = get()
     const audio = s._ensureAudio()
     if (!audio) return
+    if (s.currentTrack && (!audio.src || audio.src === 'about:blank' || audio.src.endsWith('/'))) {
+      const videoId = s.currentTrack.youtubeId || (s.currentTrack.id?.startsWith('yt_') ? s.currentTrack.id.replace(/^yt_/, '') : null)
+      audio.src = videoId ? `/api/stream?videoId=${encodeURIComponent(videoId)}` : (s.currentTrack.audioUrl || '')
+    }
     try {
       audio.volume = s.muted ? 0 : clampVolume(s.volume)
       await audio.play()

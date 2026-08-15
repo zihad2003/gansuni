@@ -5,11 +5,19 @@ const CORS_HEADERS = {
 }
 
 const INVIDIOUS_INSTANCES = [
-  'https://yewtu.be',
   'https://inv.nadeko.net',
-  'https://inv.tux.pizza',
+  'https://invidious.drgns.space',
+  'https://yewtu.be',
   'https://invidious.flokinet.to',
   'https://iv.melmac.space',
+  'https://invidious.nerqv.ps.kg',
+]
+
+const PIPED_INSTANCES = [
+  'https://api.piped.video',
+  'https://pipedapi.kavin.rocks',
+  'https://pipedapi.tokhmi.xyz',
+  'https://api.piped.privacydev.net',
 ]
 
 const FALLBACK_AUDIO_URLS = {
@@ -41,41 +49,65 @@ export async function onRequestHead(context) {
   })
 }
 
-async function resolveDirectAudioUrlFast(videoId) {
-  const fetchFormat = async (inst) => {
+async function resolveAudioStreamUrl(videoId) {
+  // 1. Try Piped APIs (usually fastest direct audio streams)
+  const fetchPiped = async (inst) => {
+    const res = await fetchWithTimeout(`${inst}/streams/${videoId}`, {
+      headers: { Accept: 'application/json' }
+    }, 2500)
+    if (!res.ok) throw new Error(`Piped ${inst} status ${res.status}`)
+    const data = await res.json()
+    const streams = data.audioStreams || []
+    if (!streams.length) throw new Error(`No audio streams on Piped ${inst}`)
+    // Prioritize M4A / AAC (itag 140) for mobile Safari compatibility
+    const m4aStream = streams.find((s) => (s.mimeType || '').includes('audio/mp4') || (s.mimeType || '').includes('m4a'))
+    const best = m4aStream || streams[0]
+    if (!best?.url) throw new Error(`Empty stream url on Piped ${inst}`)
+    return { url: best.url, mimeType: best.mimeType || 'audio/mp4' }
+  }
+
+  // 2. Try Invidious APIs
+  const fetchInvidious = async (inst) => {
     const res = await fetchWithTimeout(
       `${inst}/api/v1/videos/${videoId}`,
       {
         headers: {
-          'User-Agent':
-            'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15',
+          'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15',
           Accept: 'application/json',
         },
       },
       2500
     )
-    if (!res.ok) throw new Error(`${inst} status ${res.status}`)
+    if (!res.ok) throw new Error(`Invidious ${inst} status ${res.status}`)
     const data = await res.json()
     const adaptive = data.adaptiveFormats || []
     const audioFormats = adaptive.filter((f) => {
       const mime = (f.mimeType || f.type || f.container || '').toLowerCase()
       return mime.includes('audio') || mime.includes('webm') || mime.includes('m4a') || mime.includes('mp4')
     })
-    if (!audioFormats.length) throw new Error(`${inst} no audio format`)
+    if (!audioFormats.length) throw new Error(`Invidious ${inst} no audio format`)
     audioFormats.sort((a, b) => parseInt(b.bitrate || '0', 10) - parseInt(a.bitrate || '0', 10))
-    const best = audioFormats[0]
+    const m4aFormat = audioFormats.find((f) => (f.mimeType || '').includes('mp4') || (f.mimeType || '').includes('m4a'))
+    const best = m4aFormat || audioFormats[0]
     let audioUrl = best.url || best.audioUrl || ''
-    if (!audioUrl) throw new Error(`${inst} empty url`)
+    if (!audioUrl) throw new Error(`Invidious ${inst} empty url`)
     if (audioUrl.startsWith('/')) {
       audioUrl = `${inst}${audioUrl}`
     }
-    return audioUrl
+    return { url: audioUrl, mimeType: best.mimeType || 'audio/mp4' }
   }
 
   try {
-    return await Promise.any(INVIDIOUS_INSTANCES.map((inst) => fetchFormat(inst)))
+    return await Promise.any([
+      ...PIPED_INSTANCES.map((inst) => fetchPiped(inst)),
+      ...INVIDIOUS_INSTANCES.map((inst) => fetchInvidious(inst)),
+    ])
   } catch {
-    return null
+    // 3. Fallback to direct Invidious proxy link (itag 140 is AAC M4A 128k)
+    return {
+      url: `https://inv.nadeko.net/latest_version?id=${videoId}&itag=140`,
+      mimeType: 'audio/mp4',
+    }
   }
 }
 
@@ -88,22 +120,14 @@ export async function onRequestGet(context) {
       videoId = '6w97fN5c44E'
     }
 
+    const redirectOnly = url.searchParams.get('redirect') === '1'
     const rangeHeader = context.request.headers.get('range')
-    const directAudioUrl = await resolveDirectAudioUrlFast(videoId)
 
-    const targetUrl = directAudioUrl || FALLBACK_AUDIO_URLS[videoId] || 'https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3'
+    const resolved = await resolveAudioStreamUrl(videoId)
+    const targetUrl = resolved?.url || FALLBACK_AUDIO_URLS[videoId] || 'https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3'
+    const mimeType = resolved?.mimeType || 'audio/mp4'
 
-    const fetchHeaders = {
-      'User-Agent':
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-    }
-    if (rangeHeader) {
-      fetchHeaders['Range'] = rangeHeader
-    }
-
-    const audioRes = await fetchWithTimeout(targetUrl, { headers: fetchHeaders }, 8000)
-
-    if (!audioRes.ok && audioRes.status !== 206) {
+    if (redirectOnly) {
       return new Response(null, {
         status: 302,
         headers: {
@@ -113,8 +137,30 @@ export async function onRequestGet(context) {
       })
     }
 
+    const fetchHeaders = {
+      'User-Agent':
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+    }
+    if (rangeHeader) {
+      fetchHeaders['Range'] = rangeHeader
+    }
+
+    let audioRes = await fetchWithTimeout(targetUrl, { headers: fetchHeaders }, 6000).catch(() => null)
+
+    // If fetch failed or returned non-200/206 (e.g. 403 IP block), redirect browser directly to target URL or fallback
+    if (!audioRes || (!audioRes.ok && audioRes.status !== 206)) {
+      const fallbackUrl = `https://inv.nadeko.net/latest_version?id=${videoId}&itag=140`
+      return new Response(null, {
+        status: 302,
+        headers: {
+          Location: targetUrl.startsWith('http') ? targetUrl : fallbackUrl,
+          ...CORS_HEADERS,
+        },
+      })
+    }
+
     const responseHeaders = new Headers(CORS_HEADERS)
-    responseHeaders.set('Content-Type', audioRes.headers.get('content-type') || 'audio/webm')
+    responseHeaders.set('Content-Type', audioRes.headers.get('content-type') || mimeType)
     if (audioRes.headers.get('content-range')) {
       responseHeaders.set('Content-Range', audioRes.headers.get('content-range'))
     }
@@ -126,10 +172,13 @@ export async function onRequestGet(context) {
       headers: responseHeaders,
     })
   } catch (error) {
-    return new Response(JSON.stringify({ error: 'Stream error', message: error?.message }), {
-      status: 500,
+    // If any unexpected error occurs, redirect to inv.nadeko.net proxy
+    const url = new URL(context.request.url)
+    const videoId = url.searchParams.get('videoId') || '6w97fN5c44E'
+    return new Response(null, {
+      status: 302,
       headers: {
-        'Content-Type': 'application/json',
+        Location: `https://inv.nadeko.net/latest_version?id=${videoId}&itag=140`,
         ...CORS_HEADERS,
       },
     })

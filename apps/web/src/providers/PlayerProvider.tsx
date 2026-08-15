@@ -112,7 +112,7 @@ export function PlayerProvider({ children }: PlayerProviderProps): ReactNode {
             const isActive = s.playbackState === 'playing' || s.playbackState === 'buffering'
             ms.playbackState = isActive ? 'playing' : 'paused'
 
-            ms.setActionHandler('play', () => s.play())
+            ms.setActionHandler('play', () => s.resume())
             ms.setActionHandler('pause', () => s.pause())
             ms.setActionHandler('stop', () => s.reset())
             ms.setActionHandler('nexttrack', () => s.next())
