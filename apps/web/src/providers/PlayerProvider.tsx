@@ -7,8 +7,6 @@ import { AmbientBackground } from '@/components/AmbientBackground'
 import { MiniPlayer } from '@/components/player/MiniPlayer'
 import { MobileBottomNav } from '@/components/MobileBottomNav'
 
-import { YouTubePlayerBridge } from '@/components/player/YouTubePlayerBridge'
-
 interface PlayerProviderProps {
   children: ReactNode
 }
@@ -146,7 +144,6 @@ export function PlayerProvider({ children }: PlayerProviderProps): ReactNode {
   return (
     <>
       <AmbientBackground />
-      <YouTubePlayerBridge />
       <div className="flex flex-col min-h-screen">
         <main className="flex-1 pb-40 sm:pb-32">{children}</main>
         <MiniPlayer />

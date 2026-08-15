@@ -242,27 +242,11 @@ export const useAudioPlayer = create<PlayerSlice & InternalState>((set, get) => 
 
       const videoId = track.youtubeId || (track.id?.startsWith('yt_') ? track.id.replace(/^yt_/, '') : null)
 
-      if (videoId) {
-        // Keep mobile background audio session active via silent loop
-        try {
-          audio.src = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA='
-          audio.loop = true
-          audio.play().catch(() => {})
-        } catch {}
-
-        if (typeof window !== 'undefined' && (window as any).__ytPlayer) {
-          try {
-            (window as any).__ytPlayer.loadVideoById(videoId)
-            (window as any).__ytPlayer.playVideo()
-          } catch (e) {}
-        }
-
-        set({ playbackState: 'playing', error: null, _retryCount: 0 })
-        return
-      }
-
       let targetUrl = track.audioUrl || ''
-      if (targetUrl.startsWith('http:')) {
+
+      if (videoId) {
+        targetUrl = `/api/stream?videoId=${encodeURIComponent(videoId)}`
+      } else if (targetUrl.startsWith('http:')) {
         targetUrl = targetUrl.replace(/^http:/i, 'https:')
       }
 
@@ -295,19 +279,6 @@ export const useAudioPlayer = create<PlayerSlice & InternalState>((set, get) => 
 
   resume: async () => {
     const s = get()
-    
-    const track = s.currentTrack
-    const videoId = track?.youtubeId || (track?.id?.startsWith('yt_') ? track.id.replace(/^yt_/, '') : null)
-    if (videoId) {
-      if (typeof window !== 'undefined' && (window as any).__ytPlayer) {
-        try {
-          (window as any).__ytPlayer.playVideo()
-        } catch (e) {}
-      }
-      set({ playbackState: 'playing', error: null })
-      return
-    }
-
     const audio = s._ensureAudio()
     if (!audio) return
     try {
@@ -320,19 +291,6 @@ export const useAudioPlayer = create<PlayerSlice & InternalState>((set, get) => 
   },
 
   pause: () => {
-    const s = get()
-    const track = s.currentTrack
-    const videoId = track?.youtubeId || (track?.id?.startsWith('yt_') ? track.id.replace(/^yt_/, '') : null)
-    if (videoId) {
-      if (typeof window !== 'undefined' && (window as any).__ytPlayer) {
-        try {
-          (window as any).__ytPlayer.pauseVideo()
-        } catch (e) {}
-      }
-      set({ playbackState: 'paused' })
-      return
-    }
-
     const audio = get()._audioEl
     if (audio && !audio.paused) {
       audio.pause()
