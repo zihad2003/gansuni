@@ -57,6 +57,9 @@ export function YouTubePlayerBridge(): JSX.Element {
         events: {
           onReady: () => {
             isReadyRef.current = true
+            if (typeof window !== 'undefined') {
+              (window as any).__ytPlayer = playerRef.current
+            }
             const s = useAudioPlayer.getState()
             const vId =
               s.currentTrack?.youtubeId ||
@@ -94,6 +97,9 @@ export function YouTubePlayerBridge(): JSX.Element {
           },
         },
       })
+      if (typeof window !== 'undefined') {
+        (window as any).__ytPlayer = playerRef.current
+      }
     }
   }, [])
 

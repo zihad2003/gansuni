@@ -250,6 +250,13 @@ export const useAudioPlayer = create<PlayerSlice & InternalState>((set, get) => 
           audio.play().catch(() => {})
         } catch {}
 
+        if (typeof window !== 'undefined' && (window as any).__ytPlayer) {
+          try {
+            (window as any).__ytPlayer.loadVideoById(videoId)
+            (window as any).__ytPlayer.playVideo()
+          } catch (e) {}
+        }
+
         set({ playbackState: 'playing', error: null, _retryCount: 0 })
         return
       }
@@ -288,6 +295,19 @@ export const useAudioPlayer = create<PlayerSlice & InternalState>((set, get) => 
 
   resume: async () => {
     const s = get()
+    
+    const track = s.currentTrack
+    const videoId = track?.youtubeId || (track?.id?.startsWith('yt_') ? track.id.replace(/^yt_/, '') : null)
+    if (videoId) {
+      if (typeof window !== 'undefined' && (window as any).__ytPlayer) {
+        try {
+          (window as any).__ytPlayer.playVideo()
+        } catch (e) {}
+      }
+      set({ playbackState: 'playing', error: null })
+      return
+    }
+
     const audio = s._ensureAudio()
     if (!audio) return
     try {
@@ -300,6 +320,19 @@ export const useAudioPlayer = create<PlayerSlice & InternalState>((set, get) => 
   },
 
   pause: () => {
+    const s = get()
+    const track = s.currentTrack
+    const videoId = track?.youtubeId || (track?.id?.startsWith('yt_') ? track.id.replace(/^yt_/, '') : null)
+    if (videoId) {
+      if (typeof window !== 'undefined' && (window as any).__ytPlayer) {
+        try {
+          (window as any).__ytPlayer.pauseVideo()
+        } catch (e) {}
+      }
+      set({ playbackState: 'paused' })
+      return
+    }
+
     const audio = get()._audioEl
     if (audio && !audio.paused) {
       audio.pause()
