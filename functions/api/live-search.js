@@ -208,6 +208,52 @@ async function searchInvidiousYouTube(query, limit = 20) {
   return null
 }
 
+async function searchPiped(query, limit = 20) {
+  const instances = ['https://pipedapi.kavin.rocks', 'https://api.piped.video', 'https://pipedapi.adminforge.de']
+  for (const instance of instances) {
+    try {
+      const res = await fetch(`${instance}/search?q=${encodeURIComponent(query)}&filter=music_songs`, {
+        headers: { Accept: 'application/json' },
+        signal: AbortSignal.timeout(4000),
+      })
+      if (!res.ok) continue
+      const data = await res.json()
+      const items = Array.isArray(data) ? data : data?.items
+      if (!Array.isArray(items) || !items.length) continue
+      const tracks = []
+      for (const item of items) {
+        const fromUrl = String(item.url || '').match(/[?&]v=([\w-]{11})/)
+        const videoId = item.videoId || (fromUrl && fromUrl[1])
+        if (!videoId) continue
+        const title = item.title || 'YouTube Audio'
+        const artistName = item.uploaderName || item.uploader || 'YouTube Creator'
+        const durationMs = Math.max(30, Number(item.duration || 210)) * 1000
+        const coverArtUrl = item.thumbnail || `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`
+        tracks.push({
+          id: `yt_${videoId}`,
+          youtubeId: videoId,
+          title,
+          slug: String(title).toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+          artistId: `yt_artist_${videoId}`,
+          artist: { id: `yt_artist_${videoId}`, name: artistName, slug: 'artist', verified: true, monthlyListeners: 0 },
+          albumId: `yt_album_${videoId}`,
+          album: { id: `yt_album_${videoId}`, title: `${title} (Single)`, coverArtUrl, totalTracks: 1, durationMs, albumType: 'SINGLE' },
+          audioUrl: `/api/stream?videoId=${videoId}`,
+          durationMs,
+          trackNumber: 1,
+          discNumber: 1,
+          explicit: false,
+          playCount: 0,
+          isPremium: false,
+        })
+        if (tracks.length >= limit) break
+      }
+      if (tracks.length > 0) return tracks
+    } catch {}
+  }
+  return null
+}
+
 export async function onRequestGet(context) {
   try {
     const url = new URL(context.request.url)
@@ -220,6 +266,11 @@ export async function onRequestGet(context) {
     if (!tracks || !tracks.length) {
       source = 'Invidious Mirror'
       tracks = await searchInvidiousYouTube(query, limit)
+    }
+
+    if (!tracks || !tracks.length) {
+      source = 'Piped'
+      tracks = await searchPiped(query, limit)
     }
 
     if (!tracks) tracks = []

@@ -4,6 +4,7 @@ import { useState, useRef, type ReactNode } from 'react'
 import Image from 'next/image'
 import { UploadCloud, Music, Image as ImageIcon, X, Check, Loader2, Play } from 'lucide-react'
 import { useAudioPlayer } from '@/store/useAudioPlayer'
+import { saveLocalUpload } from '@/lib/localLibrary'
 
 interface UploadModalProps {
   isOpen: boolean
@@ -57,23 +58,14 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps): ReactNode {
     setError(null)
 
     try {
-      const formData = new FormData()
-      formData.append('audioFile', audioFile)
-      if (coverFile) formData.append('coverFile', coverFile)
-      formData.append('title', title || 'Untitled Track')
-      formData.append('artist', artist || 'Unknown Artist')
-      formData.append('album', album || 'Single')
-      formData.append('genre', genre)
-
-      const res = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
+      const track = await saveLocalUpload({
+        audioFile,
+        coverFile,
+        title: title || 'Untitled Track',
+        artist: artist || 'Unknown Artist',
+        album: album || 'Single',
       })
-
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || 'Upload failed')
-
-      setUploadedTrack(data.track)
+      setUploadedTrack(track)
     } catch (err: any) {
       setError(err?.message || 'Failed to upload song')
     } finally {
@@ -83,7 +75,7 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps): ReactNode {
 
   const handlePlayUploaded = () => {
     if (uploadedTrack) {
-      play(uploadedTrack, [uploadedTrack], 0)
+      play(uploadedTrack, [{ trackId: uploadedTrack.id, track: uploadedTrack }], 0)
       onClose()
     }
   }

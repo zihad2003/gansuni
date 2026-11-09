@@ -9,7 +9,7 @@ const navItems = [
   { label: 'Home', href: '/', icon: Home },
   { label: 'Search', href: '/search', icon: Search },
   { label: 'Browse', href: '/browse', icon: Compass },
-  { label: 'Made For You', href: '/made-for-you', icon: Sparkles },
+  { label: 'For You', href: '/made-for-you', icon: Sparkles },
   { label: 'Library', href: '/library', icon: Library },
 ]
 

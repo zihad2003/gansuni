@@ -4,7 +4,8 @@ import { useState, type ReactNode } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
-import { Home, Search, Sparkles, Compass, Library, Heart, Music2, Plus, UploadCloud, Download } from 'lucide-react'
+import { Home, Search, Sparkles, Compass, Library, Heart, Music2, UploadCloud, Download, UserRound } from 'lucide-react'
+import { coverSrc } from '@/lib/cover'
 import { FEATURED_PLAYLISTS } from '@gansuni/shared'
 import { useAudioPlayer } from '@/store/useAudioPlayer'
 import { AppDownloadModal } from './AppDownloadModal'
@@ -50,6 +51,8 @@ export function Sidebar(): ReactNode {
           <SideNavLink icon={Search} label="Search" href="/search" active={isNavActive('/search')} />
           <SideNavLink icon={Compass} label="Browse All" href="/browse" active={isNavActive('/browse')} />
           <SideNavLink icon={Sparkles} label="Made For You" href="/made-for-you" active={isNavActive('/made-for-you')} />
+          <SideNavLink icon={UploadCloud} label="Uploads" href="/upload" active={isNavActive('/upload')} />
+          <SideNavLink icon={UserRound} label="Account" href="/account" active={isNavActive('/account')} />
         </nav>
 
         <div className="glass-card p-4">
@@ -81,11 +84,14 @@ export function Sidebar(): ReactNode {
               {playedHistory.slice(0, 5).map((t) => (
                 <div
                   key={t.id}
-                  onClick={() => play(t as any, playedHistory.map((tr) => ({ trackId: tr.id, track: tr as any })), 0)}
+                  onClick={() => {
+                    const idx = playedHistory.findIndex((item) => item.id === t.id)
+                    play(t as any, playedHistory.map((tr) => ({ trackId: tr.id, track: tr as any })), Math.max(0, idx))
+                  }}
                   className="w-full flex items-center gap-3 p-2 rounded-xl hover:bg-white/10 transition-all group text-left cursor-pointer"
                 >
                   <div className="relative w-9 h-9 rounded-md overflow-hidden flex-shrink-0">
-                    <Image src={t.album?.coverArtUrl || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=600&auto=format&fit=crop&q=80'} alt={t.title} fill sizes="36px" className="object-cover" />
+                    <Image src={coverSrc(t.album?.coverArtUrl)} alt={t.title} fill sizes="36px" className="object-cover" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="text-xs font-semibold truncate text-white">{t.title}</div>

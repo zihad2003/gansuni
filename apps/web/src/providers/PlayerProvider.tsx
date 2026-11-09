@@ -5,6 +5,8 @@ import { useAudioPlayer } from '@/store/useAudioPlayer'
 import { useTheme } from '@/providers/ThemeProvider'
 import { AmbientBackground } from '@/components/AmbientBackground'
 import { MiniPlayer } from '@/components/player/MiniPlayer'
+import { refreshStoredTracks } from '@/lib/localLibrary'
+import { migrateLegacyPlayer, playerStorageKey } from '@/lib/account'
 import { MobileBottomNav } from '@/components/MobileBottomNav'
 
 interface PlayerProviderProps {
@@ -25,12 +27,99 @@ export function PlayerProvider({ children }: PlayerProviderProps): ReactNode {
   }, [currentTrack, setSourceImage])
 
   useEffect(() => {
+    migrateLegacyPlayer()
+    let key = playerStorageKey()
+    let prevSig = ''
+
+    const apply = (raw: string | null) => {
+      let saved: any = {}
+      try {
+        saved = raw ? JSON.parse(raw) : {}
+      } catch {
+        saved = {}
+      }
+      const likedTracks = Array.isArray(saved.likedTracks) ? saved.likedTracks : []
+      const playedHistory = Array.isArray(saved.playedHistory) ? saved.playedHistory : []
+      const volume = typeof saved.volume === 'number' ? saved.volume : 0.8
+      const muted = !!saved.muted
+      const repeat = saved.repeat === 'all' || saved.repeat === 'one' ? saved.repeat : 'off'
+      const shuffle = !!saved.shuffle
+      prevSig = [
+        (saved.likedTrackIds || []).join(','),
+        playedHistory.map((t: { id: string }) => t.id).join(','),
+        volume,
+        muted,
+        repeat,
+        shuffle,
+      ].join('|')
+      useAudioPlayer.setState({
+        likedTrackIds: Array.isArray(saved.likedTrackIds) ? saved.likedTrackIds : [],
+        likedTracks,
+        playedHistory,
+        volume,
+        muted,
+        repeat,
+        shuffle,
+      })
+      void Promise.all([refreshStoredTracks(likedTracks), refreshStoredTracks(playedHistory)]).then(
+        ([nextLiked, nextHistory]) => {
+          useAudioPlayer.setState({ likedTracks: nextLiked, playedHistory: nextHistory })
+        },
+      )
+      const audio = useAudioPlayer.getState()._ensureAudio()
+      if (audio) audio.volume = muted ? 0 : volume
+    }
+
+    apply(localStorage.getItem(key))
+
+    const onAccount = () => {
+      key = playerStorageKey()
+      apply(localStorage.getItem(key))
+    }
+    window.addEventListener('gansuni-account', onAccount)
+
+    const unsubPersist = useAudioPlayer.subscribe((state) => {
+      const sig = [
+        state.likedTrackIds.join(','),
+        state.playedHistory.map((t) => t.id).join(','),
+        state.volume,
+        state.muted,
+        state.repeat,
+        state.shuffle,
+      ].join('|')
+      if (sig === prevSig) return
+      prevSig = sig
+      try {
+        localStorage.setItem(
+          key,
+          JSON.stringify({
+            likedTrackIds: state.likedTrackIds,
+            likedTracks: state.likedTracks,
+            playedHistory: state.playedHistory,
+            volume: state.volume,
+            muted: state.muted,
+            repeat: state.repeat,
+            shuffle: state.shuffle,
+          }),
+        )
+      } catch {}
+    })
+    return () => {
+      unsubPersist()
+      window.removeEventListener('gansuni-account', onAccount)
+    }
+  }, [])
+
+  useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const isEditing =
         e.target instanceof HTMLInputElement ||
         e.target instanceof HTMLTextAreaElement ||
         (e.target as HTMLElement)?.isContentEditable
       if (isEditing) return
+      if (e.target instanceof HTMLButtonElement || e.target instanceof HTMLAnchorElement || e.target instanceof HTMLSelectElement) {
+        return
+      }
 
       const player = useAudioPlayer.getState()
 

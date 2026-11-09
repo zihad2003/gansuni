@@ -5,15 +5,19 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { Play, Heart, Clock, Sparkles, Music2, Radio, Headphones, Download, ChevronRight, UploadCloud } from 'lucide-react'
 import { useAudioPlayer } from '@/store/useAudioPlayer'
-import { formatDuration } from '@gansuni/shared'
+import { EXPANDED_TRACKS, formatDuration } from '@gansuni/shared'
+import { coverSrc } from '@/lib/cover'
+import { hydrateLocalTracks } from '@/lib/localLibrary'
+import { catalogSearch } from '@/lib/searchFallback'
 import { motion } from 'framer-motion'
 import { Sidebar } from '@/components/Sidebar'
 import { HeaderNav } from '@/components/HeaderNav'
 
 export default function HomePage(): ReactNode {
   const [userUploadedTracks, setUserUploadedTracks] = useState<any[]>([])
-  const [catalogTracks, setCatalogTracks] = useState<any[]>([])
+  const [catalogTracks, setCatalogTracks] = useState<any[]>(EXPANDED_TRACKS)
   const [liveTracks, setLiveTracks] = useState<any[]>([])
+  const [liveLoading, setLiveLoading] = useState(true)
 
   const play = useAudioPlayer((s) => s.play)
   const currentTrackId = useAudioPlayer((s) => s.currentTrack?.id)
@@ -23,25 +27,28 @@ export default function HomePage(): ReactNode {
   const toggleLikeTrack = useAudioPlayer((s) => s.toggleLikeTrack)
 
   useEffect(() => {
+    hydrateLocalTracks().then(setUserUploadedTracks).catch(() => {})
+
     fetch('/api/tracks')
       .then((res) => res.json())
       .then((data) => {
-        if (data.userTracks) setUserUploadedTracks(data.userTracks)
-        if (data.allTracks) setCatalogTracks(data.allTracks)
+        if (Array.isArray(data.allTracks) && data.allTracks.length > 0) setCatalogTracks(data.allTracks)
       })
       .catch(() => {})
 
     fetch('/api/live-search?q=Coke%20Studio%20Bangla&limit=20')
       .then((res) => res.json())
       .then((data) => {
-        if (data.tracks && Array.isArray(data.tracks) && data.tracks.length > 0) {
-          setLiveTracks(data.tracks)
-        }
+        const remote = Array.isArray(data.tracks) ? data.tracks : []
+        setLiveTracks(remote.length > 0 ? remote : catalogSearch('Coke Studio Bangla'))
       })
-      .catch(() => {})
+      .catch(() => setLiveTracks(catalogSearch('Coke Studio Bangla')))
+      .finally(() => setLiveLoading(false))
   }, [])
 
-  const allAvailableTracks = [...userUploadedTracks, ...catalogTracks, ...liveTracks, ...playedHistory]
+  const allAvailableTracks = [...userUploadedTracks, ...catalogTracks, ...liveTracks].filter(
+    (track, index, list) => list.findIndex((item) => item.id === track.id) === index,
+  )
 
   const onPlayTrack = (track: any, trackList: any[]) => {
     const idx = trackList.findIndex((t) => t.id === track.id)
@@ -141,7 +148,7 @@ export default function HomePage(): ReactNode {
                           className="group relative p-3 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all cursor-pointer flex flex-col justify-between"
                         >
                           <div className="relative aspect-square rounded-xl overflow-hidden mb-2 shadow-lg">
-                            <Image src={t.album?.coverArtUrl || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=600&auto=format&fit=crop&q=80'} alt={t.title} fill sizes="160px" className="object-cover transition-transform group-hover:scale-105" />
+                            <Image src={coverSrc(t.album?.coverArtUrl)} alt={t.title} fill sizes="160px" className="object-cover transition-transform group-hover:scale-105" />
                             <div className={`absolute inset-0 bg-black/40 flex items-center justify-center transition-opacity ${playing ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
                               <div className="w-10 h-10 rounded-full bg-[#F59E0B] text-black flex items-center justify-center shadow-lg">
                                 {playing ? <EqualizerAnim /> : <Play size={18} fill="#000" strokeWidth={0} className="ml-0.5" />}
@@ -185,7 +192,7 @@ export default function HomePage(): ReactNode {
                           className="group relative p-3 rounded-2xl bg-white/5 border border-amber-500/30 hover:bg-white/10 transition-all cursor-pointer flex flex-col justify-between"
                         >
                           <div className="relative aspect-square rounded-xl overflow-hidden mb-2 shadow-lg">
-                            <Image src={t.album?.coverArtUrl || ''} alt={t.title} fill sizes="160px" className="object-cover transition-transform group-hover:scale-105" />
+                            <Image src={coverSrc(t.album?.coverArtUrl)} alt={t.title} fill sizes="160px" className="object-cover transition-transform group-hover:scale-105" />
                             <div className={`absolute inset-0 bg-black/40 flex items-center justify-center transition-opacity ${playing ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
                               <div className="w-10 h-10 rounded-full bg-[#F59E0B] text-black flex items-center justify-center shadow-lg">
                                 {playing ? <EqualizerAnim /> : <Play size={18} fill="#000" strokeWidth={0} className="ml-0.5" />}
@@ -218,7 +225,7 @@ export default function HomePage(): ReactNode {
                           className="group relative p-3 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all cursor-pointer flex flex-col justify-between"
                         >
                           <div className="relative aspect-square rounded-xl overflow-hidden mb-2 shadow-lg">
-                            <Image src={t.album?.coverArtUrl || ''} alt={t.title} fill sizes="180px" className="object-cover transition-transform group-hover:scale-105" />
+                            <Image src={coverSrc(t.album?.coverArtUrl)} alt={t.title} fill sizes="180px" className="object-cover transition-transform group-hover:scale-105" />
                             <div className={`absolute inset-0 bg-black/40 flex items-center justify-center transition-opacity ${playing ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
                               <div className="w-10 h-10 rounded-full bg-[#F59E0B] text-black flex items-center justify-center shadow-lg">
                                 {playing ? <EqualizerAnim /> : <Play size={18} fill="#000" strokeWidth={0} className="ml-0.5" />}
@@ -246,6 +253,22 @@ export default function HomePage(): ReactNode {
               )}
 
               {/* TRENDING & POPULAR SONGS */}
+              {liveLoading && liveTracks.length === 0 && (
+                <section>
+                  <SectionHeader title="Trending & Popular Songs" />
+                  <div className="glass-card-strong rounded-2xl p-8 text-sm text-white/60">Loading live tracks…</div>
+                </section>
+              )}
+
+              {!liveLoading && liveTracks.length === 0 && (
+                <section>
+                  <SectionHeader title="Trending & Popular Songs" />
+                  <div className="glass-card-strong rounded-2xl p-8 text-sm text-white/60">
+                    Live search is unavailable right now. Featured songs above still play.
+                  </div>
+                </section>
+              )}
+
               {liveTracks.length > 0 && (
                 <section>
                   <SectionHeader title="Trending & Popular Songs" />
@@ -271,7 +294,7 @@ export default function HomePage(): ReactNode {
                             </div>
                             <div className="flex items-center gap-3 min-w-0">
                               <div className="relative w-11 h-11 rounded-lg overflow-hidden flex-shrink-0">
-                                <Image src={t.album?.coverArtUrl || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=600&auto=format&fit=crop&q=80'} alt={t.title} fill sizes="44px" className="object-cover" />
+                                <Image src={coverSrc(t.album?.coverArtUrl)} alt={t.title} fill sizes="44px" className="object-cover" />
                               </div>
                               <div className="min-w-0">
                                 <div className="text-sm sm:text-[15px] font-semibold truncate" style={{ color: active ? '#F59E0B' : 'var(--gs-text-primary)' }}>

@@ -195,6 +195,80 @@ async function searchInvidiousYouTube(query: string, limit = 20) {
   return null
 }
 
+const PIPED_INSTANCES = [
+  'https://pipedapi.kavin.rocks',
+  'https://api.piped.video',
+  'https://pipedapi.adminforge.de',
+]
+
+async function searchPiped(query: string, limit = 20) {
+  for (const instance of PIPED_INSTANCES) {
+    try {
+      const res = await fetch(`${instance}/search?q=${encodeURIComponent(query)}&filter=music_songs`, {
+        headers: { Accept: 'application/json' },
+        signal: AbortSignal.timeout(4000),
+      })
+      if (!res.ok) continue
+      const data = await res.json()
+      const items = Array.isArray(data) ? data : data?.items
+      if (!Array.isArray(items) || !items.length) continue
+      const tracks: any[] = []
+      for (const item of items) {
+        const fromUrl = String(item.url || '').match(/[?&]v=([\w-]{11})/)
+        const videoId = item.videoId || fromUrl?.[1]
+        if (!videoId) continue
+        const title = item.title || 'YouTube Audio'
+        const artistName = item.uploaderName || item.uploader || 'YouTube Creator'
+        const durationMs = Math.max(30, Number(item.duration || 210)) * 1000
+        const coverArtUrl = item.thumbnail || `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`
+        tracks.push({
+          id: `yt_${videoId}`,
+          youtubeId: videoId,
+          title,
+          slug: title.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+          artistId: `yt_artist_${videoId}`,
+          artist: {
+            id: `yt_artist_${videoId}`,
+            name: String(artistName),
+            slug: String(artistName).toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+            bio: '',
+            avatarUrl: coverArtUrl,
+            verified: true,
+            monthlyListeners: 0,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          },
+          albumId: `yt_album_${videoId}`,
+          album: {
+            id: `yt_album_${videoId}`,
+            title: `${title} (Single)`,
+            slug: 'single',
+            artistId: `yt_artist_${videoId}`,
+            coverArtUrl,
+            totalTracks: 1,
+            durationMs,
+            albumType: 'SINGLE',
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          },
+          audioUrl: `/api/stream?videoId=${videoId}`,
+          durationMs,
+          trackNumber: 1,
+          discNumber: 1,
+          explicit: false,
+          playCount: 0,
+          isPremium: false,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        })
+        if (tracks.length >= limit) break
+      }
+      if (tracks.length > 0) return tracks
+    } catch {}
+  }
+  return null
+}
+
 export async function OPTIONS() {
   return new Response(null, { status: 204, headers: CORS_HEADERS })
 }
@@ -211,6 +285,11 @@ export async function GET(request: NextRequest) {
     if (!tracks || !tracks.length) {
       source = 'Invidious Mirror'
       tracks = await searchInvidiousYouTube(query, limit)
+    }
+
+    if (!tracks || !tracks.length) {
+      source = 'Piped'
+      tracks = await searchPiped(query, limit)
     }
 
     if (!tracks) tracks = []

@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { Play, Heart, Disc } from 'lucide-react'
 import { EXPANDED_ALBUMS, EXPANDED_TRACKS, formatDuration } from '@gansuni/shared'
+import { coverSrc } from '@/lib/cover'
 import { useAudioPlayer } from '@/store/useAudioPlayer'
 import { Sidebar } from '@/components/Sidebar'
 import { HeaderNav } from '@/components/HeaderNav'
@@ -29,10 +30,10 @@ export default function AlbumDetailClient(): ReactNode {
 
   const isCurrentPlaying = (id: string) => currentTrackId === id && (playbackState === 'playing' || playbackState === 'buffering')
 
-  const albumTracks = EXPANDED_TRACKS.filter((t) => t.albumId === album.id)
-  const tracksToPlay = albumTracks.length > 0 ? albumTracks : EXPANDED_TRACKS.slice(0, 5)
+  const tracksToPlay = EXPANDED_TRACKS.filter((t) => t.albumId === album.id)
 
   const onPlayAll = () => {
+    if (tracksToPlay.length === 0) return
     const first = tracksToPlay[0]!
     play(first as any, tracksToPlay.map((t) => ({ trackId: t.id, track: t as any })), 0)
   }
@@ -61,7 +62,7 @@ export default function AlbumDetailClient(): ReactNode {
                     {album.totalTracks} Tracks • High Fidelity Bengali Recording
                   </p>
                   <div className="mt-4 flex items-center gap-3">
-                    <button onClick={onPlayAll} className="gs-button flex items-center gap-2 font-bold px-6 py-2.5">
+                    <button onClick={onPlayAll} disabled={tracksToPlay.length === 0} className="gs-button flex items-center gap-2 font-bold px-6 py-2.5 disabled:opacity-50">
                       <Play size={18} fill="#000" strokeWidth={0} />
                       Play Album
                     </button>
@@ -71,6 +72,9 @@ export default function AlbumDetailClient(): ReactNode {
 
               {/* TRACKLIST TABLE */}
               <div className="glass-card-strong overflow-hidden rounded-2xl divide-y divide-white/5">
+                {tracksToPlay.length === 0 && (
+                  <div className="p-8 text-center text-sm text-white/60">This album has no tracks in the catalog yet.</div>
+                )}
                 {tracksToPlay.map((t, idx) => {
                   const playing = isCurrentPlaying(t.id)
                   const liked = likedTrackIds.includes(t.id)

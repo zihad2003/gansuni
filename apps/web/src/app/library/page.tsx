@@ -1,10 +1,12 @@
 'use client'
 
-import { useState, useMemo, type ReactNode } from 'react'
+import { useEffect, useState, useMemo, type ReactNode } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Heart, Library, Play, Trash2, Clock, Music, Download } from 'lucide-react'
-import { EXPANDED_TRACKS, FEATURED_PLAYLISTS, formatDuration } from '@gansuni/shared'
+import { formatDuration } from '@gansuni/shared'
+import { coverSrc } from '@/lib/cover'
+import { readOfflineTracks, removeOfflineTrack } from '@/lib/localLibrary'
 import { useAudioPlayer } from '@/store/useAudioPlayer'
 import { Sidebar } from '@/components/Sidebar'
 import { HeaderNav } from '@/components/HeaderNav'
@@ -18,6 +20,18 @@ export default function LibraryPage(): ReactNode {
   const likedTracks = useAudioPlayer((s) => s.likedTracks)
   const playedHistory = useAudioPlayer((s) => s.playedHistory)
   const toggleLikeTrack = useAudioPlayer((s) => s.toggleLikeTrack)
+  const [deviceTracks, setDeviceTracks] = useState<any[]>([])
+
+  useEffect(() => {
+    const load = () => setDeviceTracks(readOfflineTracks())
+    load()
+    window.addEventListener('gansuni-offline', load)
+    window.addEventListener('gansuni-account', load)
+    return () => {
+      window.removeEventListener('gansuni-offline', load)
+      window.removeEventListener('gansuni-account', load)
+    }
+  }, [])
 
   const isCurrentPlaying = (id: string) => currentTrackId === id && (playbackState === 'playing' || playbackState === 'buffering')
 
@@ -129,7 +143,7 @@ export default function LibraryPage(): ReactNode {
                             </div>
                             <div className="flex items-center gap-3 min-w-0">
                               <div className="relative w-10 h-10 rounded-md overflow-hidden flex-shrink-0">
-                                <Image src={t.album?.coverArtUrl || ''} alt={t.title} fill sizes="40px" className="object-cover" />
+                                <Image src={coverSrc(t.album?.coverArtUrl)} alt={t.title} fill sizes="40px" className="object-cover" />
                               </div>
                               <div className="min-w-0">
                                 <div className="text-sm font-semibold text-white truncate">{t.title}</div>
@@ -195,7 +209,7 @@ export default function LibraryPage(): ReactNode {
                             </div>
                             <div className="flex items-center gap-3 min-w-0">
                               <div className="relative w-10 h-10 rounded-md overflow-hidden flex-shrink-0">
-                                <Image src={t.album?.coverArtUrl || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=600&auto=format&fit=crop&q=80'} alt={t.title} fill sizes="40px" className="object-cover" />
+                                <Image src={coverSrc(t.album?.coverArtUrl)} alt={t.title} fill sizes="40px" className="object-cover" />
                               </div>
                               <div className="min-w-0">
                                 <div className="text-sm font-semibold text-white truncate">{t.title}</div>
@@ -225,12 +239,42 @@ export default function LibraryPage(): ReactNode {
 
               {/* TAB CONTENT: DOWNLOADS */}
               {tab === 'DOWNLOADS' && (
-                <div className="p-12 text-center bg-white/5 rounded-2xl border border-white/10">
-                  <Download size={40} className="mx-auto text-amber-400 mb-3" />
-                  <h3 className="text-lg font-bold text-white">Offline Ready</h3>
-                  <p className="text-xs text-white/60 mt-1 max-w-sm mx-auto">
-                    Download tracks on Gaansuni Mobile app to listen offline anywhere without cellular data consumption.
-                  </p>
+                <div>
+                  {deviceTracks.length === 0 ? (
+                    <div className="p-12 text-center bg-white/5 rounded-2xl border border-white/10">
+                      <Download size={40} className="mx-auto text-amber-400 mb-3" />
+                      <h3 className="text-lg font-bold text-white">Nothing saved for offline</h3>
+                      <p className="text-xs text-white/60 mt-1 max-w-sm mx-auto">
+                        Tap the download icon on the player. The song is stored in this browser and plays with no connection.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="glass-card-strong overflow-hidden rounded-2xl divide-y divide-white/5">
+                      {deviceTracks.map((t, idx) => (
+                        <div
+                          key={t.id}
+                          onClick={() => play(t, deviceTracks.map((tr) => ({ trackId: tr.id, track: tr })), idx)}
+                          className="group grid grid-cols-[36px_1fr_auto] gap-3 px-4 py-3 items-center hover:bg-white/5 cursor-pointer"
+                        >
+                          <div className="text-sm text-white/50 text-center">{idx + 1}</div>
+                          <div className="min-w-0">
+                            <div className="text-sm font-semibold text-white truncate">{t.title}</div>
+                            <div className="text-xs text-white/60 truncate">{t.artist?.name}</div>
+                          </div>
+                          <div className="text-xs text-white/50">{formatDuration(t.durationMs)}</div>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              void removeOfflineTrack(t.id)
+                            }}
+                            className="text-xs font-bold text-white/50 hover:text-red-400"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
             </div>

@@ -5,6 +5,8 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { UploadCloud, Play, Trash2, Music, CheckCircle2 } from 'lucide-react'
 import { formatDuration } from '@gansuni/shared'
+import { coverSrc } from '@/lib/cover'
+import { deleteLocalUpload, hydrateLocalTracks } from '@/lib/localLibrary'
 import { useAudioPlayer } from '@/store/useAudioPlayer'
 import { Sidebar } from '@/components/Sidebar'
 import { HeaderNav } from '@/components/HeaderNav'
@@ -24,11 +26,8 @@ export default function UploadPage(): ReactNode {
   const fetchUploadedTracks = async () => {
     try {
       setLoading(true)
-      const res = await fetch('/api/tracks')
-      const data = await res.json()
-      if (data.userTracks) {
-        setUploadedTracks(data.userTracks)
-      }
+      const tracks = await hydrateLocalTracks()
+      setUploadedTracks(tracks)
     } catch (e) {
       console.error('Failed to load user tracks:', e)
     } finally {
@@ -45,10 +44,8 @@ export default function UploadPage(): ReactNode {
     if (!confirm('Are you sure you want to delete this uploaded song?')) return
 
     try {
-      const res = await fetch(`/api/tracks/${trackId}`, { method: 'DELETE' })
-      if (res.ok) {
-        setUploadedTracks((prev) => prev.filter((t) => t.id !== trackId))
-      }
+      await deleteLocalUpload(trackId)
+      setUploadedTracks((prev) => prev.filter((t) => t.id !== trackId))
     } catch (err) {
       console.error('Delete track error:', err)
     }
@@ -94,12 +91,14 @@ export default function UploadPage(): ReactNode {
                   </h2>
                 </div>
 
-                {uploadedTracks.length === 0 ? (
+                {loading ? (
+                  <div className="p-12 text-center text-sm text-white/60">Loading your uploads…</div>
+                ) : uploadedTracks.length === 0 ? (
                   <div className="p-12 text-center bg-white/5 rounded-2xl border border-white/10">
                     <UploadCloud size={48} className="mx-auto text-amber-400/50 mb-3" />
                     <h3 className="text-lg font-bold text-white">No Uploaded Songs Yet</h3>
                     <p className="text-xs text-white/60 mt-1 max-w-md mx-auto">
-                      Upload your personal MP3 audio tracks to add them to your cloud music library.
+                      MP3 files stay in this browser and play from your library, even after a refresh.
                     </p>
                     <button
                       onClick={() => setIsModalOpen(true)}
@@ -131,7 +130,7 @@ export default function UploadPage(): ReactNode {
                           </div>
                           <div className="flex items-center gap-3 min-w-0">
                             <div className="relative w-10 h-10 rounded-md overflow-hidden flex-shrink-0">
-                              <Image src={t.album?.coverArtUrl || ''} alt={t.title} fill sizes="40px" className="object-cover" />
+                              <Image src={coverSrc(t.album?.coverArtUrl)} alt={t.title} fill sizes="40px" className="object-cover" />
                             </div>
                             <div className="min-w-0">
                               <div className="text-sm font-semibold text-white truncate">{t.title}</div>

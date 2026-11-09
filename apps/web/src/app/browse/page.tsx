@@ -4,7 +4,8 @@ import type { ReactNode } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Compass, Sparkles, Play, Heart, Flame } from 'lucide-react'
-import { GENRES_DATA, NEW_RELEASES, POPULAR_INTERNET_TRACKS, EXPANDED_ARTISTS } from '@gansuni/shared'
+import { GENRES_DATA, NEW_RELEASES, EXPANDED_ARTISTS } from '@gansuni/shared'
+import { coverSrc } from '@/lib/cover'
 import { useAudioPlayer } from '@/store/useAudioPlayer'
 import { Sidebar } from '@/components/Sidebar'
 import { HeaderNav } from '@/components/HeaderNav'
@@ -44,8 +45,9 @@ export default function BrowsePage(): ReactNode {
                 <h2 className="text-xl font-extrabold text-white mb-4">Genres & Moods</h2>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                   {GENRES_DATA.map((g) => (
-                    <div
+                    <Link
                       key={g.id}
+                      href={`/search?q=${encodeURIComponent(g.name)}`}
                       className="group relative p-5 rounded-2xl overflow-hidden cursor-pointer shadow-lg border border-white/10 transition-all hover:scale-[1.03]"
                       style={{
                         background: `linear-gradient(135deg, ${g.color || '#F59E0B'}88, rgba(0,0,0,0.8))`,
@@ -54,7 +56,7 @@ export default function BrowsePage(): ReactNode {
                       <h3 className="text-lg font-bold text-white relative z-10">{g.name}</h3>
                       <p className="text-xs text-white/70 relative z-10 mt-1 line-clamp-2">{g.description}</p>
                       <div className="absolute -bottom-4 -right-4 w-24 h-24 rounded-full bg-white/10 blur-xl group-hover:scale-150 transition-transform" />
-                    </div>
+                    </Link>
                   ))}
                 </div>
               </section>
@@ -70,7 +72,7 @@ export default function BrowsePage(): ReactNode {
                       className="group p-3 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all text-center flex flex-col items-center cursor-pointer"
                     >
                       <div className="relative w-20 h-20 rounded-full overflow-hidden mb-2 shadow-lg group-hover:scale-105 transition-transform">
-                        <Image src={a.avatarUrl || ''} alt={a.name} fill sizes="80px" className="object-cover" />
+                        <Image src={coverSrc(a.avatarUrl)} alt={a.name} fill sizes="80px" className="object-cover" />
                       </div>
                       <div className="font-bold text-xs text-white truncate w-full">{a.name}</div>
                       <div className="text-[10px] text-white/50 truncate w-full mt-0.5">{a.monthlyListeners.toLocaleString()} listeners</div>
@@ -98,7 +100,7 @@ export default function BrowsePage(): ReactNode {
                       className="group relative p-3 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all cursor-pointer"
                     >
                       <div className="relative aspect-square rounded-xl overflow-hidden mb-2 shadow-md">
-                        <Image src={t.album?.coverArtUrl || ''} alt={t.title} fill sizes="160px" className="object-cover group-hover:scale-105 transition-transform" />
+                        <Image src={coverSrc(t.album?.coverArtUrl)} alt={t.title} fill sizes="160px" className="object-cover group-hover:scale-105 transition-transform" />
                         <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                           <div className="w-9 h-9 rounded-full bg-[#F59E0B] text-black flex items-center justify-center">
                             <Play size={16} fill="#000" strokeWidth={0} className="ml-0.5" />

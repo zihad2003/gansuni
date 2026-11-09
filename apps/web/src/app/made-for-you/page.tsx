@@ -5,6 +5,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { Sparkles, Play, Heart, Flame, Radio } from 'lucide-react'
 import { EXPANDED_TRACKS, FEATURED_PLAYLISTS } from '@gansuni/shared'
+import { coverSrc } from '@/lib/cover'
 import { useAudioPlayer } from '@/store/useAudioPlayer'
 import { Sidebar } from '@/components/Sidebar'
 import { HeaderNav } from '@/components/HeaderNav'
@@ -16,10 +17,15 @@ export default function MadeForYouPage(): ReactNode {
 
   const isCurrentPlaying = (id: string) => currentTrackId === id && (playbackState === 'playing' || playbackState === 'buffering')
 
-  const onPlayAll = () => {
-    const first = EXPANDED_TRACKS[0]!
-    play(first as any, EXPANDED_TRACKS.map((t) => ({ trackId: t.id, track: t as any })), 0)
+  const playSlice = (tracks: typeof EXPANDED_TRACKS) => {
+    if (tracks.length === 0) return
+    const first = tracks[0]!
+    play(first as any, tracks.map((t) => ({ trackId: t.id, track: t as any })), 0)
   }
+
+  const mixOne = EXPANDED_TRACKS.filter((t) => t.artistId === 'artist_1' || t.artistId === 'artist_5')
+  const mixTwo = EXPANDED_TRACKS.filter((t) => t.artistId === 'artist_3')
+  const mixThree = EXPANDED_TRACKS.filter((t) => t.artistId === 'artist_4' || t.artistId === 'artist_2')
 
   return (
     <div className="min-h-screen">
@@ -43,7 +49,7 @@ export default function MadeForYouPage(): ReactNode {
                 </p>
                 <div className="mt-5">
                   <button
-                    onClick={onPlayAll}
+                    onClick={() => playSlice(EXPANDED_TRACKS)}
                     className="gs-button flex items-center gap-2 font-bold px-6 py-2.5"
                   >
                     <Play size={18} fill="#000" strokeWidth={0} />
@@ -64,21 +70,21 @@ export default function MadeForYouPage(): ReactNode {
                     desc="Rabindranath Tagore, Sahana Bajpaie & Soft Acoustic Bengali Songs"
                     coverUrl="https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=600&auto=format&fit=crop&q=80"
                     color="from-amber-600/40 to-orange-900/40"
-                    onPlay={onPlayAll}
+                    onPlay={() => playSlice(mixOne.length ? mixOne : EXPANDED_TRACKS)}
                   />
                   <MixCard
                     title="Daily Mix 2"
                     desc="Pritom Hasan, Coke Studio Bangla, Deora & Viral Internet Fusion"
                     coverUrl="https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=600&auto=format&fit=crop&q=80"
                     color="from-purple-600/40 to-pink-900/40"
-                    onPlay={onPlayAll}
+                    onPlay={() => playSlice(mixTwo.length ? mixTwo : EXPANDED_TRACKS)}
                   />
                   <MixCard
                     title="Daily Mix 3"
                     desc="Shironamhin, Arnob, Bangla Band Hits & Rock Classics"
                     coverUrl="https://images.unsplash.com/photo-1465847899084-d164df4dedc6?w=600&auto=format&fit=crop&q=80"
                     color="from-teal-600/40 to-blue-900/40"
-                    onPlay={onPlayAll}
+                    onPlay={() => playSlice(mixThree.length ? mixThree : EXPANDED_TRACKS)}
                   />
                 </div>
               </section>
@@ -97,7 +103,7 @@ export default function MadeForYouPage(): ReactNode {
                       className="group p-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all cursor-pointer"
                     >
                       <div className="relative aspect-square rounded-xl overflow-hidden mb-3 shadow-lg">
-                        <Image src={pl.coverArtUrl || ''} alt={pl.name} fill sizes="200px" className="object-cover group-hover:scale-105 transition-transform" />
+                        <Image src={coverSrc(pl.coverArtUrl)} alt={pl.name} fill sizes="200px" className="object-cover group-hover:scale-105 transition-transform" />
                         <div className="absolute bottom-2 right-2 w-10 h-10 rounded-full bg-[#F59E0B] text-black flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 transition-opacity">
                           <Play size={16} fill="#000" strokeWidth={0} />
                         </div>

@@ -25,7 +25,9 @@ import { useTheme } from '@/providers/ThemeProvider'
 import { formatDuration } from '@gansuni/shared'
 import { ProgressBar } from './ProgressBar'
 import { VolumeSlider } from './VolumeSlider'
-import { useCallback, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useState, type ReactNode } from 'react'
+import { toast } from 'sonner'
+import { isOfflineTrack, saveOfflineTrack } from '@/lib/localLibrary'
 import { motion, AnimatePresence } from 'framer-motion'
 
 export function MiniPlayer(): ReactNode {
@@ -44,6 +46,19 @@ export function MiniPlayer(): ReactNode {
   const { themeColors } = useTheme()
   const [showQueue, setShowQueue] = useState(false)
   const [expanded, setExpanded] = useState(false)
+  const [savingOffline, setSavingOffline] = useState(false)
+  const [offlineSaved, setOfflineSaved] = useState(false)
+
+  useEffect(() => {
+    if (!track) {
+      setOfflineSaved(false)
+      return
+    }
+    const sync = () => setOfflineSaved(isOfflineTrack(track.id))
+    sync()
+    window.addEventListener('gansuni-offline', sync)
+    return () => window.removeEventListener('gansuni-offline', sync)
+  }, [track])
 
   const isTrackLiked = track ? likedTrackIds.includes(track.id) : false
 
@@ -80,19 +95,22 @@ export function MiniPlayer(): ReactNode {
     else play()
   }, [track, isPlaying, isError, play, pause])
 
-  const onDownload = useCallback(() => {
-    if (!track) return
-    const audioUrl = track.audioUrl
-    if (!audioUrl) return
-    const a = document.createElement('a')
-    a.href = audioUrl
-    a.download = `${track.title || 'track'}.mp3`
-    a.target = '_blank'
-    a.rel = 'noopener noreferrer'
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-  }, [track])
+  const onDownload = useCallback(async () => {
+    if (!track || savingOffline) return
+    if (isOfflineTrack(track.id)) {
+      toast('Already saved on this device')
+      return
+    }
+    setSavingOffline(true)
+    try {
+      await saveOfflineTrack(track)
+      toast.success('Saved for offline playback')
+    } catch (err: any) {
+      toast.error(err?.message || 'Could not save this song')
+    } finally {
+      setSavingOffline(false)
+    }
+  }, [track, savingOffline])
 
   const onPlayQueueTrack = useCallback((queueItem: any, idx: number) => {
     if (queueItem?.track) {
@@ -137,7 +155,7 @@ export function MiniPlayer(): ReactNode {
               <button
                 onClick={onDownload}
                 className="p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
-                title="Download MP3"
+                title={offlineSaved ? 'Saved on this device' : savingOffline ? 'Saving…' : 'Save for offline'}
               >
                 <Download size={20} />
               </button>
@@ -349,7 +367,7 @@ export function MiniPlayer(): ReactNode {
                   <Heart size={20} fill={isTrackLiked ? '#F59E0B' : 'none'} strokeWidth={2} />
                 </button>
 
-                <div className="hidden md:flex items-center gap-1 sm:gap-2">
+                <div className="hidden sm:flex items-center gap-1 sm:gap-2">
                   <IconButton onClick={toggleShuffle} active={shuffle} label="Shuffle" theme={themeColors}>
                     <Shuffle size={18} />
                   </IconButton>
@@ -380,7 +398,7 @@ export function MiniPlayer(): ReactNode {
                   )}
                 </button>
 
-                <div className="hidden md:flex items-center gap-1 sm:gap-2">
+                <div className="hidden sm:flex items-center gap-1 sm:gap-2">
                   <IconButton onClick={next} label="Next" theme={themeColors}>
                     <SkipForward size={22} fill={themeColors.textPrimary} />
                   </IconButton>
@@ -405,8 +423,8 @@ export function MiniPlayer(): ReactNode {
                   />
                 </div>
 
-                <div className="hidden xl:flex items-center gap-1 ml-2">
-                  <IconButton onClick={onDownload} label="Download" theme={themeColors}>
+                <div className="hidden md:flex items-center gap-1 ml-2">
+                  <IconButton onClick={onDownload} active={offlineSaved} label={offlineSaved ? 'Saved offline' : 'Save offline'} theme={themeColors}>
                     <Download size={18} />
                   </IconButton>
                   <IconButton onClick={() => setShowQueue((v) => !v)} active={showQueue} label="Queue" theme={themeColors} badge={queue.length || undefined}>
@@ -417,9 +435,12 @@ export function MiniPlayer(): ReactNode {
                   </IconButton>
                 </div>
 
-                <div className="sm:hidden flex items-center gap-1">
-                  <IconButton onClick={toggleMute} label={muted ? 'Unmute' : 'Mute'} theme={themeColors}>
-                    {muted || volume === 0 ? <VolumeX size={18} /> : <Volume2 size={18} />}
+                <div className="flex sm:hidden items-center gap-1">
+                  <IconButton onClick={prev} label="Previous" theme={themeColors}>
+                    <SkipBack size={18} fill={themeColors.textPrimary} />
+                  </IconButton>
+                  <IconButton onClick={next} label="Next" theme={themeColors}>
+                    <SkipForward size={18} fill={themeColors.textPrimary} />
                   </IconButton>
                   <IconButton onClick={() => setExpanded(true)} label="Expand player" theme={themeColors}>
                     <Maximize2 size={20} />

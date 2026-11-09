@@ -12,6 +12,7 @@ import {
   type RepeatMode,
 } from '@gansuni/shared'
 import type { Track } from '@gansuni/shared'
+import { getLocalAudioUrl, getOfflineAudioUrl } from '@/lib/localLibrary'
 
 type PlayerSlice = PlayerState & PlayerActions
 
@@ -161,7 +162,7 @@ export const useAudioPlayer = create<PlayerSlice & InternalState>((set, get) => 
           `https://yewtu.be/latest_version?id=${videoId}&itag=140`,
           `/api/stream?videoId=${videoId}&retry=${currentRetry + 1}&t=${Date.now()}`
         ]
-        audio.src = mirrors[currentRetry % mirrors.length]
+        audio.src = mirrors[currentRetry % mirrors.length] ?? mirrors[0]!
         try {
           await audio.play()
           set({ playbackState: 'playing', error: null, _retryCount: 0 })
@@ -175,8 +176,16 @@ export const useAudioPlayer = create<PlayerSlice & InternalState>((set, get) => 
   },
 
   _resolveAudioUrl: async (track: Track): Promise<string> => {
-    const videoId = track.youtubeId || track.id.replace(/^yt_/, '')
-    return `/api/stream?videoId=${encodeURIComponent(videoId)}`
+    const offlineUrl = await getOfflineAudioUrl(track.id)
+    if (offlineUrl) return offlineUrl
+    if (track.audioUrl?.startsWith('idb:') || track.id.startsWith('local_')) {
+      const localId = track.id.startsWith('local_') ? track.id : String(track.audioUrl || '').replace(/^idb:/, '')
+      const localUrl = await getLocalAudioUrl(localId)
+      if (localUrl) return localUrl
+    }
+    const videoId = track.youtubeId || (track.id?.startsWith('yt_') ? track.id.replace(/^yt_/, '') : null)
+    if (videoId) return `/api/stream?videoId=${encodeURIComponent(videoId)}`
+    return track.audioUrl || ''
   },
 
   play: async (track?: Track, queue?: QueueItem[], startIndex = 0) => {
@@ -186,18 +195,19 @@ export const useAudioPlayer = create<PlayerSlice & InternalState>((set, get) => 
 
     set({ error: null, _retryCount: 0 })
 
-    if (track && state.currentTrack && state.currentTrack.id === track.id) {
+    const sameTrack =
+      !!track && !!state.currentTrack && state.currentTrack.id === track.id
+    const sameQueueIndex = !queue || startIndex === state.currentIndex
+    if (sameTrack && sameQueueIndex && state.playbackState !== 'error') {
       if (state.playbackState === 'playing' || state.playbackState === 'buffering') {
         get().pause()
         return
-      } else {
-        get().resume()
-        return
       }
+      get().resume()
+      return
     }
 
-    const willPlayNewTrack =
-      track && (!state.currentTrack || state.currentTrack.id !== track.id)
+    const willPlayNewTrack = !!track && (!state.currentTrack || !sameTrack || !sameQueueIndex || state.playbackState === 'error')
 
     if (willPlayNewTrack && track) {
       const finalQueue =
@@ -207,12 +217,22 @@ export const useAudioPlayer = create<PlayerSlice & InternalState>((set, get) => 
       const idx = queue ? startIndex : finalQueue.findIndex((q) => q.trackId === track.id)
       const resolvedIdx = idx >= 0 ? idx : 0
 
+      const queueUnchanged =
+        finalQueue.length === state.queue.length &&
+        finalQueue.every((item, i) => item.trackId === state.queue[i]?.trackId)
+      const keepShuffle =
+        state.shuffle && queueUnchanged && state._shuffleIndices.length === finalQueue.length
       const shuffled = state.shuffle
         ? shuffleArray(
             finalQueue.map((_, i) => i).filter((i) => i !== resolvedIdx),
           )
         : []
-      const shuffleIndices = state.shuffle ? [resolvedIdx, ...shuffled] : []
+      const shuffleIndices = keepShuffle
+        ? state._shuffleIndices
+        : state.shuffle
+          ? [resolvedIdx, ...shuffled]
+          : []
+      const shuffleIdx = keepShuffle ? Math.max(0, shuffleIndices.indexOf(resolvedIdx)) : state.shuffle ? 0 : -1
 
       set((s) => ({
         queue: finalQueue,
@@ -222,19 +242,15 @@ export const useAudioPlayer = create<PlayerSlice & InternalState>((set, get) => 
         currentTime: 0,
         duration: track.durationMs || 180000,
         _shuffleIndices: shuffleIndices,
-        _shuffleIdx: 0,
+        _shuffleIdx: shuffleIdx,
         playedHistory: [track, ...s.playedHistory.filter((t) => t.id !== track.id)].slice(0, 50),
       }))
 
-      const videoId = track.youtubeId || (track.id?.startsWith('yt_') ? track.id.replace(/^yt_/, '') : null)
-
-      let targetUrl = track.audioUrl || ''
-
-      if (videoId) {
-        targetUrl = `/api/stream?videoId=${encodeURIComponent(videoId)}`
-      } else if (targetUrl.startsWith('http:')) {
+      let targetUrl = await get()._resolveAudioUrl(track)
+      if (targetUrl.startsWith('http:')) {
         targetUrl = targetUrl.replace(/^http:/i, 'https:')
       }
+      const videoId = track.youtubeId || (track.id?.startsWith('yt_') ? track.id.replace(/^yt_/, '') : null)
 
       audio.src = targetUrl
       audio.currentTime = 0
@@ -260,9 +276,8 @@ export const useAudioPlayer = create<PlayerSlice & InternalState>((set, get) => 
     }
 
     if (state.currentTrack) {
-      if (!audio.src || audio.src === 'about:blank' || audio.src.endsWith('/')) {
-        const videoId = state.currentTrack.youtubeId || (state.currentTrack.id?.startsWith('yt_') ? state.currentTrack.id.replace(/^yt_/, '') : null)
-        audio.src = videoId ? `/api/stream?videoId=${encodeURIComponent(videoId)}` : (state.currentTrack.audioUrl || '')
+      if (!audio.src || audio.src === 'about:blank' || audio.src.endsWith('/') || audio.src.startsWith('idb:')) {
+        audio.src = await get()._resolveAudioUrl(state.currentTrack)
       }
       try {
         audio.volume = state.muted ? 0 : clampVolume(state.volume)
@@ -279,9 +294,8 @@ export const useAudioPlayer = create<PlayerSlice & InternalState>((set, get) => 
     const s = get()
     const audio = s._ensureAudio()
     if (!audio) return
-    if (s.currentTrack && (!audio.src || audio.src === 'about:blank' || audio.src.endsWith('/'))) {
-      const videoId = s.currentTrack.youtubeId || (s.currentTrack.id?.startsWith('yt_') ? s.currentTrack.id.replace(/^yt_/, '') : null)
-      audio.src = videoId ? `/api/stream?videoId=${encodeURIComponent(videoId)}` : (s.currentTrack.audioUrl || '')
+    if (s.currentTrack && (!audio.src || audio.src === 'about:blank' || audio.src.endsWith('/') || audio.src.startsWith('idb:'))) {
+      audio.src = await get()._resolveAudioUrl(s.currentTrack)
     }
     try {
       audio.volume = s.muted ? 0 : clampVolume(s.volume)

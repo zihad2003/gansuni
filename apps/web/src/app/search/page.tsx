@@ -4,7 +4,9 @@ import { useState, useEffect, useMemo, type ReactNode } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Search, Play, Heart, Music, Mic2, Disc, Clock, X, Loader2, Sparkles, Radio } from 'lucide-react'
-import { EXPANDED_TRACKS, EXPANDED_ARTISTS, EXPANDED_ALBUMS, formatDuration } from '@gansuni/shared'
+import { EXPANDED_ARTISTS, EXPANDED_ALBUMS, formatDuration } from '@gansuni/shared'
+import { coverSrc } from '@/lib/cover'
+import { withSearchFallback } from '@/lib/searchFallback'
 import { useAudioPlayer } from '@/store/useAudioPlayer'
 import { Sidebar } from '@/components/Sidebar'
 import { HeaderNav } from '@/components/HeaderNav'
@@ -12,8 +14,10 @@ import { SoundWave } from '@/components/SoundWave'
 
 export default function SearchPage(): ReactNode {
   const [query, setQuery] = useState('')
+  const [ready, setReady] = useState(false)
   const [filter, setFilter] = useState<'ALL' | 'TRACKS' | 'ARTISTS' | 'ALBUMS'>('ALL')
   const [liveTracks, setLiveTracks] = useState<any[]>([])
+  const [resultSource, setResultSource] = useState<'live' | 'cache' | 'catalog'>('live')
   const [isSearching, setIsSearching] = useState(false)
 
   const play = useAudioPlayer((s) => s.play)
@@ -25,6 +29,13 @@ export default function SearchPage(): ReactNode {
   const isCurrentPlaying = (id: string) => currentTrackId === id && (playbackState === 'playing' || playbackState === 'buffering')
 
   useEffect(() => {
+    const q = new URLSearchParams(window.location.search).get('q') || ''
+    if (q) setQuery(q)
+    setReady(true)
+  }, [])
+
+  useEffect(() => {
+    if (!ready) return
     const searchTarget = query.trim() || 'Trending Music Songs'
 
     const timer = setTimeout(async () => {
@@ -32,18 +43,21 @@ export default function SearchPage(): ReactNode {
         setIsSearching(true)
         const res = await fetch(`/api/live-search?q=${encodeURIComponent(searchTarget)}&limit=25`)
         const data = await res.json()
-        if (data.tracks && Array.isArray(data.tracks)) {
-          setLiveTracks(data.tracks)
-        }
+        const resolved = withSearchFallback(searchTarget, Array.isArray(data.tracks) ? data.tracks : [])
+        setLiveTracks(resolved.tracks)
+        setResultSource(resolved.source)
       } catch (e) {
         console.error('Search API error:', e)
+        const resolved = withSearchFallback(searchTarget, [])
+        setLiveTracks(resolved.tracks)
+        setResultSource(resolved.source)
       } finally {
         setIsSearching(false)
       }
     }, query.trim() ? 400 : 0)
 
     return () => clearTimeout(timer)
-  }, [query])
+  }, [query, ready])
 
   const displayTracks = liveTracks
 
@@ -110,7 +124,9 @@ export default function SearchPage(): ReactNode {
                     </span>
                   )}
                 </div>
-                <span className="text-xs font-semibold text-white/40 uppercase tracking-widest hidden sm:inline">Live Stream API</span>
+                <span className="text-xs font-semibold text-white/40 uppercase tracking-widest hidden sm:inline">
+                  {resultSource === 'live' ? 'Live' : resultSource === 'cache' ? 'Saved results' : 'Catalog'}
+                </span>
               </div>
 
               {/* TRACKS SECTION */}
@@ -152,7 +168,7 @@ export default function SearchPage(): ReactNode {
                             </div>
                             <div className="flex items-center gap-3 min-w-0">
                               <div className="relative w-10 h-10 rounded-md overflow-hidden flex-shrink-0">
-                                <Image src={t.album?.coverArtUrl || ''} alt={t.title} fill sizes="40px" className="object-cover" />
+                                <Image src={coverSrc(t.album?.coverArtUrl)} alt={t.title} fill sizes="40px" className="object-cover" />
                               </div>
                               <div className="min-w-0">
                                 <div className="text-sm font-semibold text-white truncate">{t.title}</div>
@@ -187,6 +203,9 @@ export default function SearchPage(): ReactNode {
                     <Mic2 size={18} className="text-[#F97316]" />
                     <span>Artists ({filteredArtists.length})</span>
                   </h2>
+                  {filteredArtists.length === 0 ? (
+                    <div className="p-8 text-center bg-white/5 rounded-2xl border border-white/10 text-white/60 text-sm">No artists match this search</div>
+                  ) : (
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                     {filteredArtists.map((a) => (
                       <Link
@@ -195,13 +214,14 @@ export default function SearchPage(): ReactNode {
                         className="group p-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all text-center flex flex-col items-center cursor-pointer"
                       >
                         <div className="relative w-24 h-24 rounded-full overflow-hidden mb-3 shadow-lg group-hover:scale-105 transition-transform">
-                          <Image src={a.avatarUrl || ''} alt={a.name} fill sizes="96px" className="object-cover" />
+                          <Image src={coverSrc(a.avatarUrl)} alt={a.name} fill sizes="96px" className="object-cover" />
                         </div>
                         <div className="font-bold text-sm text-white truncate w-full">{a.name}</div>
                         <div className="text-xs text-white/50 truncate w-full mt-1">Artist • {a.monthlyListeners.toLocaleString()} listeners</div>
                       </Link>
                     ))}
                   </div>
+                  )}
                 </section>
               )}
 
@@ -212,6 +232,9 @@ export default function SearchPage(): ReactNode {
                     <Disc size={18} className="text-purple-400" />
                     <span>Albums ({filteredAlbums.length})</span>
                   </h2>
+                  {filteredAlbums.length === 0 ? (
+                    <div className="p-8 text-center bg-white/5 rounded-2xl border border-white/10 text-white/60 text-sm">No albums match this search</div>
+                  ) : (
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                     {filteredAlbums.map((al) => (
                       <Link
@@ -220,13 +243,14 @@ export default function SearchPage(): ReactNode {
                         className="group p-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all cursor-pointer"
                       >
                         <div className="relative w-full aspect-square rounded-xl overflow-hidden mb-3 shadow-lg group-hover:scale-105 transition-transform">
-                          <Image src={al.coverArtUrl || ''} alt={al.title} fill sizes="200px" className="object-cover" />
+                          <Image src={coverSrc(al.coverArtUrl)} alt={al.title} fill sizes="200px" className="object-cover" />
                         </div>
                         <div className="font-bold text-sm text-white truncate">{al.title}</div>
                         <div className="text-xs text-white/50 truncate mt-1">Album • {al.totalTracks} tracks</div>
                       </Link>
                     ))}
                   </div>
+                  )}
                 </section>
               )}
             </div>

@@ -1,9 +1,10 @@
 'use client'
 
-import { useState, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
-import { ChevronLeft, ChevronRight, Search, Sparkles, Download, UploadCloud } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Search, Download, UserRound } from 'lucide-react'
 import { AppDownloadModal } from './AppDownloadModal'
+import { readSession, type Session } from '@/lib/account'
 
 interface HeaderNavProps {
   showSearchInput?: boolean
@@ -19,6 +20,18 @@ export function HeaderNav({
   const router = useRouter()
   const [query, setQuery] = useState(initialSearchQuery)
   const [isDownloadOpen, setIsDownloadOpen] = useState(false)
+  const [session, setSession] = useState<Session | null>(null)
+
+  useEffect(() => {
+    const sync = () => setSession(readSession())
+    sync()
+    window.addEventListener('gansuni-account', sync)
+    return () => window.removeEventListener('gansuni-account', sync)
+  }, [])
+
+  useEffect(() => {
+    setQuery(initialSearchQuery)
+  }, [initialSearchQuery])
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -77,7 +90,13 @@ export function HeaderNav({
         </div>
 
         <div className="flex items-center gap-2.5">
-          {/* DOWNLOAD APP BUTTON */}
+          <button
+            onClick={() => router.push('/account')}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-white/10 border border-white/15 text-white hover:bg-white/15"
+          >
+            <UserRound size={14} />
+            <span className="max-w-[88px] truncate">{session ? session.name : 'Sign in'}</span>
+          </button>
           <button
             onClick={() => setIsDownloadOpen(true)}
             className="hidden sm:flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-extrabold bg-gradient-to-r from-amber-500 to-orange-500 text-black hover:opacity-90 active:scale-95 transition-all shadow-md"

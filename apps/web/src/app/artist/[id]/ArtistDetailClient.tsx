@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { Play, Heart, CheckCircle2, UserCheck } from 'lucide-react'
 import { EXPANDED_ARTISTS, EXPANDED_TRACKS, formatDuration } from '@gansuni/shared'
+import { coverSrc } from '@/lib/cover'
 import { useAudioPlayer } from '@/store/useAudioPlayer'
 import { Sidebar } from '@/components/Sidebar'
 import { HeaderNav } from '@/components/HeaderNav'
@@ -30,10 +31,10 @@ export default function ArtistDetailClient(): ReactNode {
 
   const isCurrentPlaying = (id: string) => currentTrackId === id && (playbackState === 'playing' || playbackState === 'buffering')
 
-  const artistTracks = EXPANDED_TRACKS.filter((t) => t.artistId === artist.id)
-  const tracksToPlay = artistTracks.length > 0 ? artistTracks : EXPANDED_TRACKS.slice(0, 5)
+  const tracksToPlay = EXPANDED_TRACKS.filter((t) => t.artistId === artist.id)
 
   const onPlayAll = () => {
+    if (tracksToPlay.length === 0) return
     const first = tracksToPlay[0]!
     play(first as any, tracksToPlay.map((t) => ({ trackId: t.id, track: t as any })), 0)
   }
@@ -51,7 +52,7 @@ export default function ArtistDetailClient(): ReactNode {
               {/* ARTIST HERO BANNER */}
               <div className="relative overflow-hidden rounded-3xl p-6 sm:p-10 bg-gradient-to-r from-teal-900/80 via-neutral-900 to-indigo-900/80 border border-white/15 shadow-2xl flex flex-col sm:flex-row items-center gap-6">
                 <div className="relative w-36 h-36 sm:w-44 sm:h-44 rounded-full overflow-hidden shadow-2xl flex-shrink-0 border-4 border-white/10">
-                  <Image src={artist.avatarUrl || ''} alt={artist.name} fill sizes="200px" className="object-cover" priority />
+                  <Image src={coverSrc(artist.avatarUrl)} alt={artist.name} fill sizes="200px" className="object-cover" priority />
                 </div>
                 <div className="flex-1 text-center sm:text-left">
                   <div className="flex items-center justify-center sm:justify-start gap-1.5 text-xs font-extrabold uppercase tracking-wider text-emerald-400">
@@ -65,7 +66,7 @@ export default function ArtistDetailClient(): ReactNode {
                   <p className="text-xs text-white/60 mt-2 max-w-xl leading-relaxed">{artist.bio}</p>
 
                   <div className="mt-5 flex items-center justify-center sm:justify-start gap-3">
-                    <button onClick={onPlayAll} className="gs-button flex items-center gap-2 font-bold px-6 py-2.5">
+                    <button onClick={onPlayAll} disabled={tracksToPlay.length === 0} className="gs-button flex items-center gap-2 font-bold px-6 py-2.5 disabled:opacity-50">
                       <Play size={18} fill="#000" strokeWidth={0} />
                       Play Top Tracks
                     </button>
@@ -77,6 +78,9 @@ export default function ArtistDetailClient(): ReactNode {
               <section>
                 <h2 className="text-xl font-extrabold text-white mb-4">Popular Songs</h2>
                 <div className="glass-card-strong overflow-hidden rounded-2xl divide-y divide-white/5">
+                  {tracksToPlay.length === 0 && (
+                    <div className="p-8 text-center text-sm text-white/60">No songs from this artist are in the catalog yet.</div>
+                  )}
                   {tracksToPlay.map((t, idx) => {
                     const playing = isCurrentPlaying(t.id)
                     const liked = likedTrackIds.includes(t.id)
@@ -98,7 +102,7 @@ export default function ArtistDetailClient(): ReactNode {
                         </div>
                         <div className="flex items-center gap-3 min-w-0">
                           <div className="relative w-10 h-10 rounded-md overflow-hidden flex-shrink-0">
-                            <Image src={t.album?.coverArtUrl || ''} alt={t.title} fill sizes="40px" className="object-cover" />
+                            <Image src={coverSrc(t.album?.coverArtUrl)} alt={t.title} fill sizes="40px" className="object-cover" />
                           </div>
                           <div className="min-w-0">
                             <div className="text-sm font-semibold text-white truncate">{t.title}</div>

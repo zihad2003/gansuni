@@ -5,7 +5,8 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { Play, Heart, Clock, Music2, Shuffle } from 'lucide-react'
-import { FEATURED_PLAYLISTS, EXPANDED_TRACKS, formatDuration } from '@gansuni/shared'
+import { FEATURED_PLAYLISTS, formatDuration } from '@gansuni/shared'
+import { coverSrc } from '@/lib/cover'
 import { useAudioPlayer } from '@/store/useAudioPlayer'
 import { Sidebar } from '@/components/Sidebar'
 import { HeaderNav } from '@/components/HeaderNav'
@@ -14,7 +15,8 @@ export default function PlaylistDetailClient(): ReactNode {
   const params = useParams()
   const playlistId = params?.id as string
 
-  const playlist = FEATURED_PLAYLISTS.find((p) => p.id === playlistId) || {
+  const foundPlaylist = FEATURED_PLAYLISTS.find((p) => p.id === playlistId)
+  const playlist = foundPlaylist || {
     id: playlistId || 'default',
     name: 'Playlist',
     description: 'Custom music playlist',
@@ -29,9 +31,10 @@ export default function PlaylistDetailClient(): ReactNode {
 
   const isCurrentPlaying = (id: string) => currentTrackId === id && (playbackState === 'playing' || playbackState === 'buffering')
 
-  const tracks = EXPANDED_TRACKS
+  const tracks = (foundPlaylist?.tracks ?? []).flatMap((item) => (item.track ? [item.track] : []))
 
   const onPlayAll = () => {
+    if (tracks.length === 0) return
     const first = tracks[0]!
     play(first as any, tracks.map((t) => ({ trackId: t.id, track: t as any })), 0)
   }
@@ -49,14 +52,14 @@ export default function PlaylistDetailClient(): ReactNode {
               {/* PLAYLIST HEADER */}
               <div className="relative overflow-hidden rounded-3xl p-6 sm:p-8 bg-gradient-to-br from-emerald-900/60 via-neutral-900 to-indigo-900/60 border border-white/15 flex flex-col sm:flex-row items-start sm:items-center gap-6 shadow-2xl">
                 <div className="relative w-36 h-36 sm:w-44 sm:h-44 rounded-2xl overflow-hidden shadow-2xl flex-shrink-0">
-                  <Image src={playlist.coverArtUrl || ''} alt={playlist.name} fill sizes="200px" className="object-cover" priority />
+                  <Image src={coverSrc(playlist.coverArtUrl)} alt={playlist.name} fill sizes="200px" className="object-cover" priority />
                 </div>
                 <div className="flex-1">
                   <span className="text-xs font-bold uppercase tracking-wider text-emerald-400">Playlist</span>
                   <h1 className="text-2xl sm:text-4xl font-extrabold text-white mt-1">{playlist.name}</h1>
                   <p className="text-xs sm:text-sm text-white/70 mt-2 leading-relaxed">{playlist.description}</p>
                   <div className="mt-4 flex items-center gap-3">
-                    <button onClick={onPlayAll} className="gs-button flex items-center gap-2 font-bold px-6 py-2.5">
+                    <button onClick={onPlayAll} disabled={tracks.length === 0} className="gs-button flex items-center gap-2 font-bold px-6 py-2.5 disabled:opacity-50">
                       <Play size={18} fill="#000" strokeWidth={0} />
                       Play All ({tracks.length})
                     </button>
@@ -66,6 +69,9 @@ export default function PlaylistDetailClient(): ReactNode {
 
               {/* TRACKLIST TABLE */}
               <div className="glass-card-strong overflow-hidden rounded-2xl divide-y divide-white/5">
+                {tracks.length === 0 && (
+                  <div className="p-8 text-center text-sm text-white/60">This playlist is empty.</div>
+                )}
                 {tracks.map((t, idx) => {
                   const playing = isCurrentPlaying(t.id)
                   const liked = likedTrackIds.includes(t.id)
@@ -87,7 +93,7 @@ export default function PlaylistDetailClient(): ReactNode {
                       </div>
                       <div className="flex items-center gap-3 min-w-0">
                         <div className="relative w-10 h-10 rounded-md overflow-hidden flex-shrink-0">
-                          <Image src={t.album?.coverArtUrl || ''} alt={t.title} fill sizes="40px" className="object-cover" />
+                          <Image src={coverSrc(t.album?.coverArtUrl)} alt={t.title} fill sizes="40px" className="object-cover" />
                         </div>
                         <div className="min-w-0">
                           <div className="text-sm font-semibold text-white truncate">{t.title}</div>
